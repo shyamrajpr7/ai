@@ -4,7 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../models/chat_message.dart';
 import '../models/chat_conversation.dart';
 import '../services/ai_service.dart';
-import '../services/gemini_service.dart';
+import '../services/groq_service.dart';
 import '../services/ollama_service.dart';
 import '../services/hive_service.dart';
 import 'settings_provider.dart';
@@ -182,12 +182,12 @@ class ChatProvider extends ChangeNotifier {
   }
 
   AIService _createAIService() {
-    if (_settingsProvider.backend == BackendType.gemini) {
-      final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-      if (apiKey.isEmpty || apiKey == 'your_gemini_api_key_here') {
-        throw Exception('Set your Gemini API key in the .env file');
+    if (_settingsProvider.backend == BackendType.groq) {
+      final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
+      if (apiKey.isEmpty || apiKey == 'your_groq_api_key_here') {
+        throw Exception('Set your Groq API key in the .env file');
       }
-      return GeminiService(apiKey);
+      return GroqService(apiKey: apiKey, model: _settingsProvider.groqModel);
     } else {
       return OllamaService(
         endpoint: _settingsProvider.ollamaEndpoint,

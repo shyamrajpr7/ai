@@ -117,23 +117,15 @@ class SettingsScreen extends StatelessWidget {
                 const SizedBox(height: 8),
                 _buildToggle(settings),
                 const SizedBox(height: 16),
-                if (settings.backend == BackendType.ollama) ...[
-                  _buildLabel('Endpoint URL'),
-                  const SizedBox(height: 8),
-                  _buildInputField(
-                    initialValue: settings.ollamaEndpoint,
-                    hint: 'http://localhost:11434/v1',
-                    onChanged: (v) => settings.setOllamaEndpoint(v),
-                  ),
-                  const SizedBox(height: 12),
+                if (settings.backend == BackendType.groq) ...[
                   _buildLabel('Model'),
                   const SizedBox(height: 8),
                   _buildInputField(
-                    initialValue: settings.ollamaModel,
-                    hint: 'llama3.2',
-                    onChanged: (v) => settings.setOllamaModel(v),
+                    initialValue: settings.groqModel,
+                    hint: 'llama3-70b-8192',
+                    onChanged: (v) => settings.setGroqModel(v),
                   ),
-                ] else ...[
+                  const SizedBox(height: 12),
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
@@ -153,7 +145,7 @@ class SettingsScreen extends StatelessWidget {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Using Gemini API. Set your key in the .env file.',
+                            'Set your Groq API key in the .env file.',
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.5),
                               fontSize: 13,
@@ -162,6 +154,22 @@ class SettingsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
+                  ),
+                ] else ...[
+                  _buildLabel('Endpoint URL'),
+                  const SizedBox(height: 8),
+                  _buildInputField(
+                    initialValue: settings.ollamaEndpoint,
+                    hint: 'http://localhost:11434/v1',
+                    onChanged: (v) => settings.setOllamaEndpoint(v),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildLabel('Model'),
+                  const SizedBox(height: 8),
+                  _buildInputField(
+                    initialValue: settings.ollamaModel,
+                    hint: 'llama3.2',
+                    onChanged: (v) => settings.setOllamaModel(v),
                   ),
                 ],
               ],
@@ -273,11 +281,11 @@ class SettingsScreen extends StatelessWidget {
         children: [
           Expanded(
             child: _toggleOption(
-              label: 'Gemini',
-              icon: Icons.cloud_outlined,
-              isSelected: settings.backend == BackendType.gemini,
+              label: 'Groq',
+              icon: Icons.bolt_outlined,
+              isSelected: settings.backend == BackendType.groq,
               accent: settings.accentColor,
-              onTap: () => settings.setBackend(BackendType.gemini),
+              onTap: () => settings.setBackend(BackendType.groq),
             ),
           ),
           Container(
