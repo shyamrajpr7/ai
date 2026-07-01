@@ -122,7 +122,7 @@ class SettingsScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   _buildInputField(
                     initialValue: settings.groqModel,
-                    hint: 'llama3-70b-8192',
+                    hint: 'llama-3.1-8b-instant',
                     onChanged: (v) => settings.setGroqModel(v),
                   ),
                   const SizedBox(height: 12),

@@ -65,13 +65,14 @@ class _HomeScreenState extends State<HomeScreen> {
       builder: (context, provider, _) {
         return Scaffold(
           drawer: ChatHistoryDrawer(provider: provider),
-          body: GradientMeshBackground(
-            child: SafeArea(
-              child: Column(
-                children: [
-                  _buildHeader(accent, provider),
-                  Expanded(child: _buildMessages(provider, accent)),
-                  GlassInputBar(
+          body: Builder(
+            builder: (scaffoldCtx) => GradientMeshBackground(
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    _buildHeader(scaffoldCtx, accent, provider),
+                    Expanded(child: _buildMessages(provider, accent)),
+                    GlassInputBar(
                     isProcessing: provider.isProcessing,
                     onSend: _handleSend,
                     controller: _textController,
@@ -80,12 +81,13 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-        );
-      },
-    );
+        ),
+      );
+    },
+  );
   }
 
-  Widget _buildHeader(Color accent, ChatProvider provider) {
+  Widget _buildHeader(BuildContext buildContext, Color accent, ChatProvider provider) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
@@ -100,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Icons.menu_rounded,
               color: Colors.white.withOpacity(0.6),
             ),
-            onPressed: () => Scaffold.of(context).openDrawer(),
+            onPressed: () => Scaffold.of(buildContext).openDrawer(),
           ),
           Container(
             width: 28,

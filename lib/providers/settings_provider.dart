@@ -8,7 +8,7 @@ class SettingsProvider extends ChangeNotifier {
 
   Color _accentColor = const Color(0xFF7C4DFF);
   BackendType _backend = BackendType.groq;
-  String _groqModel = 'llama3-70b-8192';
+  String _groqModel = 'llama-3.1-8b-instant';
   String _ollamaEndpoint = 'http://localhost:11434/v1';
   String _ollamaModel = 'llama3.2';
   bool _initialized = false;
@@ -27,7 +27,7 @@ class SettingsProvider extends ChangeNotifier {
     if (data != null) {
       _accentColor = Color(data['accentColor'] as int);
       _backend = BackendType.values[data['backend'] as int];
-      _groqModel = data['groqModel'] as String? ?? 'llama3-70b-8192';
+      _groqModel = data['groqModel'] as String? ?? 'llama-3.1-8b-instant';
       _ollamaEndpoint =
           data['ollamaEndpoint'] as String? ?? 'http://localhost:11434/v1';
       _ollamaModel = data['ollamaModel'] as String? ?? 'llama3.2';
