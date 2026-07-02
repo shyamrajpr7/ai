@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../providers/settings_provider.dart';
 import 'thinking_indicator.dart';
 
 class GlassInputBar extends StatefulWidget {
@@ -138,7 +140,9 @@ class _GlassInputBarState extends State<GlassInputBar>
                     decoration: InputDecoration(
                       hintText: widget.isProcessing
                           ? 'AI is thinking...'
-                          : 'Message Nexus...',
+                          : context.watch<SettingsProvider>().webSearchEnabled
+                              ? 'Message Nexus (web search on)...'
+                              : 'Message Nexus...',
                       hintStyle: TextStyle(
                         color: Colors.white.withOpacity(0.3),
                         fontSize: 15,

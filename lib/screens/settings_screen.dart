@@ -147,6 +147,40 @@ class SettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _buildSection(
+              'Web Search',
+              Icons.language_rounded,
+              accent,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildLabel('Search the web'),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Pulls live search results as context',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.35),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      value: settings.webSearchEnabled,
+                      onChanged: (v) => settings.setWebSearchEnabled(v),
+                      activeColor: accent,
+                      activeTrackColor: accent.withOpacity(0.3),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildSection(
               'Data',
               Icons.storage_outlined,
               accent,

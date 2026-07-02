@@ -13,6 +13,7 @@ class OllamaService implements AIService {
   Stream<String> streamResponse({
     required String message,
     required List<Map<String, String>> history,
+    String webSearchContext = '',
   }) async* {
     final url = Uri.parse('$endpoint/chat/completions');
 
@@ -25,45 +26,35 @@ class OllamaService implements AIService {
       'content': message,
     });
 
-    final request = http.Request('POST', url)
-      ..headers['Content-Type'] = 'application/json'
-      ..body = jsonEncode({
-        'model': model,
-        'messages': messages,
-        'stream': true,
-      });
-
-    final response = await http.Client().send(request);
-
-    if (response.statusCode != 200) {
-      final errorBody = await response.stream.bytesToString();
-      throw Exception('Ollama error (${response.statusCode}): $errorBody');
+    String systemPrompt = 'You are the Nexus AI assistant. You provide helpful, concise, and accurate responses.';
+    if (webSearchContext.isNotEmpty) {
+      systemPrompt += '\n\nHere are web search results to help answer the user:\n$webSearchContext\n\nUse these search results to provide an informed answer. Cite sources where appropriate.';
     }
 
-    String buffer = '';
-    await for (final chunk in response.stream.transform(utf8.decoder)) {
-      buffer += chunk;
-      while (buffer.contains('\n')) {
-        final idx = buffer.indexOf('\n');
-        final line = buffer.substring(0, idx).trim();
-        buffer = buffer.substring(idx + 1);
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'model': model,
+        'messages': [
+          {
+            'role': 'system',
+            'content': systemPrompt,
+          },
+          ...messages,
+        ],
+        'stream': false,
+        'temperature': 0.6,
+      }),
+    );
 
-        if (line.startsWith('data: ')) {
-          final data = line.substring(6).trim();
-          if (data == '[DONE]' || data.isEmpty) continue;
-          try {
-            final json = jsonDecode(data);
-            final choices = json['choices'] as List?;
-            if (choices != null && choices.isNotEmpty) {
-              final delta = choices[0]['delta'] as Map?;
-              if (delta != null) {
-                final content = delta['content'] as String? ?? '';
-                if (content.isNotEmpty) yield content;
-              }
-            }
-          } catch (_) {}
-        }
-      }
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final content = data['choices'][0]['message']['content'] as String;
+      yield content;
+    } else {
+      final errorBody = response.body;
+      throw Exception('Ollama error (${response.statusCode}): $errorBody');
     }
   }
 }

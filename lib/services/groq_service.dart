@@ -13,6 +13,7 @@ class GroqService implements AIService {
   Stream<String> streamResponse({
     required String message,
     required List<Map<String, String>> history,
+    String webSearchContext = '',
   }) async* {
     final url = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
 
@@ -25,6 +26,11 @@ class GroqService implements AIService {
       'content': message,
     });
 
+    String systemPrompt = 'You are the Nexus AI assistant. You provide helpful, concise, and accurate responses.';
+    if (webSearchContext.isNotEmpty) {
+      systemPrompt += '\n\nHere are web search results to help answer the user:\n$webSearchContext\n\nUse these search results to provide an informed answer. Cite sources where appropriate.';
+    }
+
     final response = await http.post(
       url,
       headers: {
@@ -36,8 +42,7 @@ class GroqService implements AIService {
         'messages': [
           {
             'role': 'system',
-            'content':
-                'You are the Nexus AI assistant. You provide helpful, concise, and accurate responses.',
+            'content': systemPrompt,
           },
           ...messages,
         ],

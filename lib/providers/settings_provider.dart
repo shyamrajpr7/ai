@@ -11,6 +11,7 @@ class SettingsProvider extends ChangeNotifier {
   String _groqModel = 'llama-3.1-8b-instant';
   String _ollamaEndpoint = 'http://localhost:11434/v1';
   String _ollamaModel = 'llama3.2';
+  bool _webSearchEnabled = false;
   bool _initialized = false;
 
   Color get accentColor => _accentColor;
@@ -18,6 +19,7 @@ class SettingsProvider extends ChangeNotifier {
   String get groqModel => _groqModel;
   String get ollamaEndpoint => _ollamaEndpoint;
   String get ollamaModel => _ollamaModel;
+  bool get webSearchEnabled => _webSearchEnabled;
   bool get initialized => _initialized;
 
   SettingsProvider(this._hiveService);
@@ -31,6 +33,7 @@ class SettingsProvider extends ChangeNotifier {
       _ollamaEndpoint =
           data['ollamaEndpoint'] as String? ?? 'http://localhost:11434/v1';
       _ollamaModel = data['ollamaModel'] as String? ?? 'llama3.2';
+      _webSearchEnabled = data['webSearchEnabled'] as bool? ?? false;
     }
     _initialized = true;
     notifyListeners();
@@ -66,6 +69,12 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setWebSearchEnabled(bool enabled) async {
+    _webSearchEnabled = enabled;
+    await _save();
+    notifyListeners();
+  }
+
   Future<void> _save() async {
     await _hiveService.saveSettings({
       'accentColor': _accentColor.value,
@@ -73,6 +82,7 @@ class SettingsProvider extends ChangeNotifier {
       'groqModel': _groqModel,
       'ollamaEndpoint': _ollamaEndpoint,
       'ollamaModel': _ollamaModel,
+      'webSearchEnabled': _webSearchEnabled,
     });
   }
 }

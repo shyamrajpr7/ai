@@ -6,6 +6,7 @@ import '../models/chat_conversation.dart';
 import '../services/ai_service.dart';
 import '../services/groq_service.dart';
 import '../services/ollama_service.dart';
+import '../services/web_search_service.dart';
 import '../services/hive_service.dart';
 import 'settings_provider.dart';
 
@@ -109,6 +110,19 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      String webSearchContext = '';
+      if (_settingsProvider.webSearchEnabled) {
+        try {
+          final searchApiKey = dotenv.env['TAVILY_API_KEY'] ?? '';
+          if (searchApiKey.isNotEmpty) {
+            final searchService = WebSearchService(apiKey: searchApiKey);
+            webSearchContext = await searchService.search(text);
+          }
+        } catch (e) {
+          debugPrint('Web search failed: $e');
+        }
+      }
+
       final history = conv.messages
           .where((m) => m.status != MessageStatus.error)
           .map((m) => {'role': m.role, 'content': m.content})
@@ -120,6 +134,7 @@ class ChatProvider extends ChangeNotifier {
       await for (final chunk in aiService.streamResponse(
         message: text,
         history: history,
+        webSearchContext: webSearchContext,
       )) {
         fullResponse.write(chunk);
         _currentResponse = fullResponse.toString();
