@@ -229,7 +229,7 @@ class ChatProvider extends ChangeNotifier {
       notifyListeners();
     } catch (e) {
       _isProcessing = false;
-      _errorMessage = 'Image generation failed. Tap to retry.';
+      _errorMessage = 'Image gen failed: ${e.toString().replaceAll("Exception: ", "")}';
       notifyListeners();
     }
   }

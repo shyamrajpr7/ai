@@ -8,10 +8,15 @@ class ImageGenService {
       'https://image.pollinations.ai/prompt/${Uri.encodeComponent(prompt)}',
     );
 
-    final response = await http.get(url);
+    final response = await http.get(
+      url,
+      headers: {'User-Agent': 'NexusChat/1.0'},
+    ).timeout(const Duration(seconds: 60));
 
-    if (response.statusCode != 200) {
-      throw Exception('Image generation failed (${response.statusCode})');
+    if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
+      throw Exception(
+        'Image generation failed (${response.statusCode})',
+      );
     }
 
     return base64Encode(response.bodyBytes);
