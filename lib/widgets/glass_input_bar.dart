@@ -32,8 +32,14 @@ class _GlassInputBarState extends State<GlassInputBar> {
   }
 
   Future<void> _initSpeech() async {
-    final available = await _speech.initialize();
-    if (mounted) setState(() => _speechAvailable = available);
+    try {
+      final available = await _speech.initialize(onError: (error) {
+        debugPrint('Speech init error: $error');
+      });
+      if (mounted) setState(() => _speechAvailable = available);
+    } catch (e) {
+      debugPrint('Speech init failed: $e');
+    }
   }
 
   void _startListening() {
@@ -53,7 +59,9 @@ class _GlassInputBarState extends State<GlassInputBar> {
       listenFor: const Duration(seconds: 30),
       pauseFor: const Duration(seconds: 2),
       partialResults: true,
-    );
+    ).then((_) {
+      if (mounted) setState(() => _isListening = false);
+    });
     setState(() => _isListening = true);
   }
 
