@@ -20,15 +20,21 @@ class GlassInputBar extends StatefulWidget {
   State<GlassInputBar> createState() => _GlassInputBarState();
 }
 
-class _GlassInputBarState extends State<GlassInputBar> {
+class _GlassInputBarState extends State<GlassInputBar>
+    with SingleTickerProviderStateMixin {
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
   bool _speechAvailable = false;
+  late AnimationController _pulseController;
 
   @override
   void initState() {
     super.initState();
     _initSpeech();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
   }
 
   Future<void> _initSpeech() async {
@@ -45,11 +51,13 @@ class _GlassInputBarState extends State<GlassInputBar> {
   void _startListening() {
     if (!_speechAvailable) return;
     HapticFeedback.mediumImpact();
+    _pulseController.repeat(reverse: true);
     _speech.listen(
       onResult: (result) {
         widget.controller.text = result.recognizedWords;
         if (result.finalResult) {
           setState(() => _isListening = false);
+          _pulseController.stop();
           widget.controller.text = result.recognizedWords;
           if (result.recognizedWords.trim().isNotEmpty) {
             _send();
@@ -60,6 +68,7 @@ class _GlassInputBarState extends State<GlassInputBar> {
       pauseFor: const Duration(seconds: 2),
       partialResults: true,
     ).then((_) {
+      _pulseController.stop();
       if (mounted) setState(() => _isListening = false);
     });
     setState(() => _isListening = true);
@@ -67,12 +76,14 @@ class _GlassInputBarState extends State<GlassInputBar> {
 
   void _stopListening() {
     _speech.stop();
+    _pulseController.stop();
     setState(() => _isListening = false);
   }
 
   @override
   void dispose() {
     _speech.stop();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -94,15 +105,20 @@ class _GlassInputBarState extends State<GlassInputBar> {
             blurRadius: 20,
             spreadRadius: 0,
           ),
+          BoxShadow(
+            color: accent.withOpacity(0.05),
+            blurRadius: 40,
+            spreadRadius: -10,
+          ),
         ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            color: Colors.white.withOpacity(0.03),
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+            color: Colors.white.withOpacity(0.04),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -147,28 +163,54 @@ class _GlassInputBarState extends State<GlassInputBar> {
   Widget _buildMicButton(Color accent) {
     if (widget.isProcessing) return const SizedBox(width: 44);
 
-    return GestureDetector(
-      onTap: _isListening ? _stopListening : _startListening,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: _isListening
-              ? accent.withOpacity(0.25)
-              : Colors.transparent,
-        ),
-        child: Center(
-          child: Icon(
-            _isListening ? Icons.mic : Icons.mic_none_rounded,
-            color: _isListening
-                ? accent
-                : Colors.white.withOpacity(0.4),
-            size: 22,
-          ),
-        ),
-      ),
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, _) {
+        final pulse = _pulseController.value;
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            if (_isListening)
+              Container(
+                width: 44 + pulse * 12,
+                height: 44 + pulse * 12,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent.withOpacity(0.1 * (1 - pulse)),
+                ),
+              ),
+            GestureDetector(
+              onTap: _isListening ? _stopListening : _startListening,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _isListening
+                      ? accent.withOpacity(0.25)
+                      : Colors.transparent,
+                  border: Border.all(
+                    color: _isListening
+                        ? accent.withOpacity(0.4)
+                        : Colors.white.withOpacity(0.1),
+                    width: 1,
+                  ),
+                ),
+                child: Center(
+                  child: Icon(
+                    _isListening ? Icons.mic : Icons.mic_none_rounded,
+                    color: _isListening
+                        ? accent
+                        : Colors.white.withOpacity(0.4),
+                    size: 22,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

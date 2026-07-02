@@ -27,10 +27,10 @@ class ChatBubble extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(
-        left: isUser ? 48 : 8,
-        right: isUser ? 8 : 48,
-        top: 4,
-        bottom: 4,
+        left: isUser ? 60 : 12,
+        right: isUser ? 12 : 60,
+        top: 6,
+        bottom: 6,
       ),
       child: Row(
         mainAxisAlignment:
@@ -38,8 +38,8 @@ class ChatBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isUser)
-            _buildAvatar(accent),
-          const SizedBox(width: 8),
+            _buildAvatar(accent, isUser),
+          const SizedBox(width: 10),
           Flexible(
             child: Column(
               crossAxisAlignment:
@@ -65,46 +65,95 @@ class ChatBubble extends StatelessWidget {
                           : Colors.white.withOpacity(0.08),
                       width: 0.5,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isUser
+                            ? accent.withOpacity(0.08)
+                            : Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: _buildContent(isUser, accent),
                 )
                     .animate()
                     .fadeIn(
                         duration: 300.ms,
-                        curve: Curves.easeOut)
+                        curve: Curves.easeOutCubic)
                     .slideX(
-                        begin: isUser ? 0.2 : -0.2,
+                        begin: isUser ? 0.15 : -0.15,
                         end: 0,
-                        duration: 300.ms),
+                        duration: 300.ms,
+                        curve: Curves.easeOutCubic),
+                const SizedBox(height: 2),
+                if (!isStreaming && !isError)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      left: isUser ? 0 : 4,
+                      right: isUser ? 4 : 0,
+                    ),
+                    child: Text(
+                      _formatTime(message.timestamp),
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.15),
+                        fontSize: 11,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
           if (isUser)
-            _buildAvatar(accent),
-          const SizedBox(width: 8),
+            _buildAvatar(accent, isUser),
+          const SizedBox(width: 10),
         ],
       ),
     );
   }
 
-  Widget _buildAvatar(Color accent) {
-    final isUser = message.role == 'user';
+  String _formatTime(DateTime timestamp) {
+    final now = DateTime.now();
+    final diff = now.difference(timestamp);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+    final hour = timestamp.hour > 12 ? timestamp.hour - 12 : (timestamp.hour == 0 ? 12 : timestamp.hour);
+    final ampm = timestamp.hour >= 12 ? 'PM' : 'AM';
+    final min = timestamp.minute.toString().padLeft(2, '0');
+    if (diff.inDays < 1) return '$hour:$min $ampm';
+    return '${timestamp.month}/${timestamp.day} $hour:$min $ampm';
+  }
+
+  Widget _buildAvatar(Color accent, bool isUser) {
     return Container(
-      width: 28,
-      height: 28,
+      width: 30,
+      height: 30,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: isUser ? accent.withOpacity(0.3) : accent.withOpacity(0.15),
-        border: Border.all(
-          color: accent.withOpacity(0.3),
-          width: 1,
-        ),
+        gradient: isUser
+            ? LinearGradient(
+                colors: [accent, accent.withOpacity(0.6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : LinearGradient(
+                colors: [const Color(0xFF7C4DFF), const Color(0xFF448AFF)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+        boxShadow: [
+          BoxShadow(
+            color: (isUser ? accent : const Color(0xFF7C4DFF)).withOpacity(0.3),
+            blurRadius: 6,
+          ),
+        ],
       ),
       child: Center(
         child: Icon(
           isUser ? Icons.person : Icons.auto_awesome,
-          size: 14,
-          color: accent.withOpacity(0.8),
+          size: 15,
+          color: Colors.white.withOpacity(0.9),
         ),
       ),
     );
@@ -116,15 +165,25 @@ class ChatBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            message.content,
-            style: TextStyle(
-              color: Colors.red.shade300,
-              fontSize: 14,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.error_outline, size: 16, color: Colors.red.shade300),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  message.content,
+                  style: TextStyle(
+                    color: Colors.red.shade300,
+                    fontSize: 14,
+                    height: 1.5,
+                  ),
+                ),
+              ),
+            ],
           ),
           if (onRetry != null) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             GestureDetector(
               onTap: () {
                 HapticFeedback.lightImpact();
@@ -132,7 +191,7 @@ class ChatBubble extends StatelessWidget {
               },
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: accent.withOpacity(0.5)),
@@ -164,7 +223,7 @@ class ChatBubble extends StatelessWidget {
       if (message.content.isEmpty) {
         return const SizedBox(
           width: 40,
-          height: 16,
+          height: 20,
           child: Center(
             child: SizedBox(
               width: 16,
@@ -182,7 +241,7 @@ class ChatBubble extends StatelessWidget {
         style: const TextStyle(
           color: Colors.white,
           fontSize: 15,
-          height: 1.5,
+          height: 1.6,
         ),
       );
     }
@@ -192,10 +251,10 @@ class ChatBubble extends StatelessWidget {
         data: message.content,
         styleSheet: MarkdownStyleSheet(
           textScaleFactor: 1.0,
-          p: const TextStyle(
-            color: Colors.white,
+          p: TextStyle(
+            color: Colors.white.withOpacity(0.95),
             fontSize: 15,
-            height: 1.5,
+            height: 1.6,
           ),
           code: const TextStyle(
             color: Color(0xFFE0E0FF),
@@ -215,7 +274,7 @@ class ChatBubble extends StatelessWidget {
         p: const TextStyle(
           color: Color(0xFFE0E0FF),
           fontSize: 15,
-          height: 1.5,
+          height: 1.6,
         ),
         h1: const TextStyle(
           color: Colors.white,

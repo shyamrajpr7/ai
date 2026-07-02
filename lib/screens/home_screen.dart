@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -41,8 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
         );
       }
     });
@@ -83,88 +84,103 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       );
-    },
-  );
+      },
+    );
   }
 
   Widget _buildHeader(BuildContext buildContext, Color accent, ChatProvider provider) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.white.withOpacity(0.05)),
-        ),
-      ),
-      child: Row(
-        children: [
-          IconButton(
-            icon: Icon(
-              Icons.menu_rounded,
-              color: Colors.white.withOpacity(0.6),
-            ),
-            onPressed: () => Scaffold.of(buildContext).openDrawer(),
-          ),
-          Container(
-            width: 28,
-            height: 28,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [Color(0xFF7C4DFF), Color(0xFF448AFF)],
-              ),
-            ),
-            child: const Center(
-              child: Icon(Icons.auto_awesome, size: 14, color: Colors.white),
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.02),
+            border: Border(
+              bottom: BorderSide(color: Colors.white.withOpacity(0.06)),
             ),
           ),
-          const SizedBox(width: 10),
-          const Text(
-            'Nexus',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'SpaceGrotesk',
-            ),
-          ),
-          const Spacer(),
-          IconButton(
-            icon: Icon(
-              Icons.add_rounded,
-              color: Colors.white.withOpacity(0.6),
-            ),
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              provider.createConversation();
-            },
-            tooltip: 'New Chat',
-          ),
-          IconButton(
-            icon: Icon(
-              Icons.settings_rounded,
-              color: Colors.white.withOpacity(0.6),
-            ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (_, __, ___) => const SettingsScreen(),
-                  transitionsBuilder: (_, animation, __, child) {
-                    return SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(1, 0),
-                        end: Offset.zero,
-                      ).animate(animation),
-                      child: child,
-                    );
-                  },
-                  transitionDuration: const Duration(milliseconds: 300),
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(
+                  Icons.menu_rounded,
+                  color: Colors.white.withOpacity(0.6),
                 ),
-              );
-            },
-            tooltip: 'Settings',
+                onPressed: () => Scaffold.of(buildContext).openDrawer(),
+              ),
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    colors: [accent, const Color(0xFF448AFF)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accent.withOpacity(0.3),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Icon(Icons.auto_awesome, size: 15, color: Colors.white),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Nexus',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'SpaceGrotesk',
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: Icon(
+                  Icons.add_rounded,
+                  color: Colors.white.withOpacity(0.6),
+                ),
+                onPressed: () {
+                  HapticFeedback.lightImpact();
+                  provider.createConversation();
+                },
+                tooltip: 'New Chat',
+              ),
+              IconButton(
+                icon: Icon(
+                  Icons.settings_rounded,
+                  color: Colors.white.withOpacity(0.6),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => const SettingsScreen(),
+                      transitionsBuilder: (_, animation, __, child) {
+                        return SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(1, 0),
+                            end: Offset.zero,
+                          ).animate(CurvedAnimation(
+                            parent: animation,
+                            curve: Curves.easeOutCubic,
+                          )),
+                          child: child,
+                        );
+                      },
+                      transitionDuration: const Duration(milliseconds: 350),
+                    ),
+                  );
+                },
+                tooltip: 'Settings',
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -177,25 +193,39 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.chat_bubble_outline_rounded,
-              size: 64,
-              color: Colors.white.withOpacity(0.08),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [
+                    accent.withOpacity(0.12),
+                    accent.withOpacity(0.03),
+                  ],
+                ),
+              ),
+              child: Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: 36,
+                color: accent.withOpacity(0.3),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             Text(
               'Start a conversation',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.3),
+                color: Colors.white.withOpacity(0.5),
                 fontSize: 18,
                 fontFamily: 'SpaceGrotesk',
+                fontWeight: FontWeight.w500,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               'Tap + to create a new chat',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withOpacity(0.25),
                 fontSize: 14,
                 fontFamily: 'Inter',
               ),
@@ -213,8 +243,8 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: 88,
+              height: 88,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
@@ -226,17 +256,27 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               child: Icon(
                 Icons.auto_awesome,
-                size: 36,
+                size: 40,
                 color: accent.withOpacity(0.4),
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Text(
               'Ask me anything',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
-                fontSize: 16,
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 18,
                 fontFamily: 'SpaceGrotesk',
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'I\'m here to help with anything you need',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.25),
+                fontSize: 14,
+                fontFamily: 'Inter',
               ),
             ),
           ],
@@ -246,7 +286,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.only(top: 8, bottom: 8),
+      padding: const EdgeInsets.only(top: 12, bottom: 12),
       itemCount: messages.length + (provider.isProcessing ? 1 : 0),
       itemBuilder: (context, index) {
         if (index < messages.length) {

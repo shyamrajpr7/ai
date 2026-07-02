@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -57,8 +58,8 @@ class SettingsScreen extends StatelessWidget {
                 _buildLabel('Accent Color'),
                 const SizedBox(height: 12),
                 Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
+                  spacing: 14,
+                  runSpacing: 14,
                   children: _accentColors.map((color) {
                     final isSelected = color.value == accent.value;
                     return GestureDetector(
@@ -67,37 +68,33 @@ class SettingsScreen extends StatelessWidget {
                         settings.setAccentColor(color);
                       },
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: 44,
-                        height: 44,
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeOutCubic,
+                        width: 46,
+                        height: 46,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: color,
-                          border: isSelected
-                              ? Border.all(
-                                  color: Colors.white,
-                                  width: 2.5,
-                                )
-                              : Border.all(
-                                  color: Colors.white.withOpacity(0.1),
-                                  width: 1,
-                                ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: color.withOpacity(0.5),
-                                    blurRadius: 12,
-                                    spreadRadius: 1,
-                                  ),
-                                ]
-                              : null,
+                          border: Border.all(
+                            color: isSelected
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.15),
+                            width: isSelected ? 2.5 : 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withOpacity(isSelected ? 0.5 : 0.15),
+                              blurRadius: isSelected ? 14 : 6,
+                              spreadRadius: isSelected ? 2 : 0,
+                            ),
+                          ],
                         ),
                         child: isSelected
                             ? const Center(
                                 child: Icon(
                                   Icons.check,
                                   color: Colors.white,
-                                  size: 20,
+                                  size: 22,
                                 ),
                               )
                             : null,
@@ -126,34 +123,8 @@ class SettingsScreen extends StatelessWidget {
                     onChanged: (v) => settings.setGroqModel(v),
                   ),
                   const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: Colors.white.withOpacity(0.08),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          size: 18,
-                          color: accent.withOpacity(0.7),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Set your Groq API key in the .env file.',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.5),
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                  _buildInfoBox(accent,
+                    'Set your Groq API key in the .env file.',
                   ),
                 ] else ...[
                   _buildLabel('Endpoint URL'),
@@ -191,7 +162,7 @@ class SettingsScreen extends StatelessWidget {
                       side: BorderSide(
                         color: Colors.red.shade300.withOpacity(0.3),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      padding: const EdgeInsets.symmetric(vertical: 13),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
@@ -224,36 +195,50 @@ class SettingsScreen extends StatelessWidget {
     Color accent, {
     required List<Widget> children,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.04),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.06),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.08),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 20, color: accent),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: 'SpaceGrotesk',
-                ),
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: accent.withOpacity(0.15),
+                    ),
+                    child: Icon(icon, size: 18, color: accent),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    title,
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.85),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'SpaceGrotesk',
+                    ),
+                  ),
+                ],
               ),
+              const SizedBox(height: 16),
+              ...children,
             ],
           ),
-          const SizedBox(height: 16),
-          ...children,
-        ],
+        ),
       ),
     );
   }
@@ -271,10 +256,11 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildToggle(SettingsProvider settings) {
+    final accent = settings.accentColor;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.white.withOpacity(0.08)),
       ),
       child: Row(
@@ -284,13 +270,13 @@ class SettingsScreen extends StatelessWidget {
               label: 'Groq',
               icon: Icons.bolt_outlined,
               isSelected: settings.backend == BackendType.groq,
-              accent: settings.accentColor,
+              accent: accent,
               onTap: () => settings.setBackend(BackendType.groq),
             ),
           ),
           Container(
             width: 1,
-            height: 32,
+            height: 36,
             color: Colors.white.withOpacity(0.08),
           ),
           Expanded(
@@ -298,7 +284,7 @@ class SettingsScreen extends StatelessWidget {
               label: 'Ollama',
               icon: Icons.computer_outlined,
               isSelected: settings.backend == BackendType.ollama,
-              accent: settings.accentColor,
+              accent: accent,
               onTap: () => settings.setBackend(BackendType.ollama),
             ),
           ),
@@ -317,17 +303,19 @@ class SettingsScreen extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10),
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        margin: const EdgeInsets.all(3),
         decoration: BoxDecoration(
-          color: isSelected ? accent.withOpacity(0.15) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          color: isSelected ? accent.withOpacity(0.2) : Colors.transparent,
+          borderRadius: BorderRadius.circular(11),
         ),
         child: Column(
           children: [
             Icon(
               icon,
-              size: 20,
+              size: 22,
               color: isSelected ? accent : Colors.white.withOpacity(0.3),
             ),
             const SizedBox(height: 4),
@@ -339,6 +327,7 @@ class SettingsScreen extends StatelessWidget {
                     : Colors.white.withOpacity(0.4),
                 fontSize: 13,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                fontFamily: 'Inter',
               ),
             ),
           ],
@@ -378,6 +367,38 @@ class SettingsScreen extends StatelessWidget {
             vertical: 12,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildInfoBox(Color accent, String message) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: accent.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: accent.withOpacity(0.15),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.info_outline,
+            size: 18,
+            color: accent.withOpacity(0.8),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 13,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,5 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../widgets/gradient_mesh_background.dart';
 import 'home_screen.dart';
 
@@ -14,13 +14,15 @@ class _SplashScreenState extends State<SplashScreen>
     with TickerProviderStateMixin {
   late AnimationController _particleController;
   late AnimationController _logoController;
+  late AnimationController _ringController;
+  late AnimationController _taglineController;
 
   @override
   void initState() {
     super.initState();
     _particleController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 4),
+      duration: const Duration(seconds: 6),
     )..repeat();
 
     _logoController = AnimationController(
@@ -28,8 +30,22 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(seconds: 2),
     );
 
-    Future.delayed(const Duration(milliseconds: 500), () {
+    _ringController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+
+    _taglineController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    );
+
+    Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) _logoController.forward();
+    });
+
+    Future.delayed(const Duration(milliseconds: 1400), () {
+      if (mounted) _taglineController.forward();
     });
 
     Future.delayed(const Duration(seconds: 3), () {
@@ -61,6 +77,8 @@ class _SplashScreenState extends State<SplashScreen>
   void dispose() {
     _particleController.dispose();
     _logoController.dispose();
+    _ringController.dispose();
+    _taglineController.dispose();
     super.dispose();
   }
 
@@ -79,72 +97,128 @@ class _SplashScreenState extends State<SplashScreen>
             },
           ),
           Center(
-            child: AnimatedBuilder(
-              animation: _logoController,
-              builder: (context, _) {
-                final t = _logoController.value;
-                return Opacity(
-                  opacity: t,
-                  child: Transform.scale(
-                    scale: 0.8 + 0.2 * t,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF7C4DFF), Color(0xFF448AFF)],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    const Color(0xFF7C4DFF).withOpacity(0.4),
-                                blurRadius: 40,
-                                spreadRadius: 10,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedBuilder(
+                  animation: Listenable.merge([_logoController, _ringController]),
+                  builder: (context, _) {
+                    final t = _logoController.value;
+                    final ringT = _ringController.value;
+                    return Opacity(
+                      opacity: t,
+                      child: Transform.scale(
+                        scale: 0.8 + 0.2 * t,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Outer pulsing ring
+                            Container(
+                              width: 120 + ringT * 20,
+                              height: 120 + ringT * 20,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFF7C4DFF).withOpacity(0.2 - ringT * 0.1),
+                                  width: 1,
+                                ),
                               ),
-                            ],
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.auto_awesome,
-                              size: 48,
-                              color: Colors.white,
                             ),
-                          ),
-                        ).animate().shimmer(
-                            duration: 2.seconds,
-                            color: Colors.white.withOpacity(0.3)),
-                        const SizedBox(height: 28),
-                        const Text(
+                            // Middle glow ring
+                            Container(
+                              width: 100,
+                              height: 100,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF7C4DFF).withOpacity(0.2 + ringT * 0.15),
+                                    blurRadius: 30 + ringT * 20,
+                                    spreadRadius: 5 + ringT * 5,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Logo circle
+                            Container(
+                              width: 88,
+                              height: 88,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF7C4DFF), Color(0xFF448AFF)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF7C4DFF).withOpacity(0.4),
+                                    blurRadius: 40,
+                                    spreadRadius: 10,
+                                  ),
+                                ],
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.auto_awesome,
+                                  size: 44,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 32),
+                AnimatedBuilder(
+                  animation: _logoController,
+                  builder: (context, _) {
+                    final t = _logoController.value;
+                    return Opacity(
+                      opacity: t,
+                      child: Transform.translate(
+                        offset: Offset(0, 10 * (1 - t)),
+                        child: const Text(
                           'Nexus',
                           style: TextStyle(
                             color: Colors.white,
-                            fontSize: 40,
+                            fontSize: 42,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'SpaceGrotesk',
                             letterSpacing: -1,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 12),
+                AnimatedBuilder(
+                  animation: _taglineController,
+                  builder: (context, _) {
+                    final t = _taglineController.value;
+                    return Opacity(
+                      opacity: t,
+                      child: Transform.translate(
+                        offset: Offset(0, 8 * (1 - t)),
+                        child: Text(
                           'Intelligent Conversations',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.4),
+                            color: Colors.white.withOpacity(0.5),
                             fontSize: 14,
                             fontFamily: 'Inter',
-                            letterSpacing: 2,
+                            letterSpacing: 3,
+                            fontWeight: FontWeight.w300,
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ],
@@ -160,15 +234,25 @@ class _ParticlePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF7C4DFF).withOpacity(0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    final colors = [
+      const Color(0xFF7C4DFF),
+      const Color(0xFF448AFF),
+      const Color(0xFFE040FB),
+      const Color(0xFF00BCD4),
+    ];
 
-    for (int i = 0; i < 30; i++) {
+    for (int i = 0; i < 40; i++) {
       final seed = i * 137.5;
-      final x = ((seed + progress * 300) % (size.width + 100)) - 50;
-      final y = ((seed * 0.7 + progress * 200) % (size.height + 100)) - 50;
-      final radius = 1.0 + (seed % 10) / 10 * 2.0;
+      final color = colors[i % colors.length];
+      final paint = Paint()
+        ..color = color.withOpacity(0.15 + (seed % 10) / 10 * 0.15)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
+      final phase = (seed * 0.01) % (2 * pi);
+      final x = ((seed + progress * 300 + 50 * sin(progress * 2 + phase)) % (size.width + 100)) - 50;
+      final y = ((seed * 0.7 + progress * 200 + 40 * cos(progress * 1.5 + phase)) % (size.height + 100)) - 50;
+      final radius = 1.5 + (seed % 10) / 10 * 2.5;
+
       canvas.drawCircle(Offset(x, y), radius, paint);
     }
   }

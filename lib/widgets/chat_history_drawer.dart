@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/chat_conversation.dart';
@@ -25,68 +26,79 @@ class ChatHistoryDrawer extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Container(
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 16,
-                left: 20,
-                right: 16,
-                bottom: 16,
-              ),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(
-                    color: Colors.white.withOpacity(0.05),
+            ClipRRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  padding: EdgeInsets.only(
+                    top: MediaQuery.of(context).padding.top + 16,
+                    left: 20,
+                    right: 16,
+                    bottom: 16,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withOpacity(0.06),
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF7C4DFF), Color(0xFF448AFF)],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF7C4DFF).withOpacity(0.3),
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.auto_awesome,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Nexus',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'SpaceGrotesk',
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: accent.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: IconButton(
+                          icon: const Icon(Icons.add, color: Colors.white70),
+                          onPressed: () {
+                            provider.createConversation();
+                            Navigator.pop(context);
+                          },
+                          tooltip: 'New Chat',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF7C4DFF), Color(0xFF448AFF)],
-                      ),
-                    ),
-                    child: const Center(
-                      child: Icon(
-                        Icons.auto_awesome,
-                        size: 18,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Text(
-                    'Nexus',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'SpaceGrotesk',
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: accent.withOpacity(0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white70),
-                      onPressed: () {
-                        provider.createConversation();
-                        Navigator.pop(context);
-                      },
-                      tooltip: 'New Chat',
-                    ),
-                  ),
-                ],
               ),
             ),
             Expanded(
@@ -106,6 +118,14 @@ class ChatHistoryDrawer extends StatelessWidget {
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.3),
                               fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Tap + to start a new chat',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.2),
+                              fontSize: 12,
                             ),
                           ),
                         ],
@@ -248,14 +268,20 @@ class _ConversationTile extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Colors.red.withOpacity(0.3),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
         child: const Icon(Icons.delete, color: Colors.white70),
       ),
       confirmDismiss: (_) async => true,
       onDismissed: (_) => onDelete(),
       child: GestureDetector(
         onLongPress: onRename,
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
           margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
           decoration: BoxDecoration(
             color: isSelected
@@ -263,19 +289,25 @@ class _ConversationTile extends StatelessWidget {
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
             border: isSelected
-                ? Border.all(color: accent.withOpacity(0.2))
+                ? Border.all(color: accent.withOpacity(0.25))
                 : null,
           ),
           child: ListTile(
             onTap: onTap,
             leading: Container(
-              width: 32,
-              height: 32,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected
-                    ? accent.withOpacity(0.2)
-                    : Colors.white.withOpacity(0.05),
+                gradient: isSelected
+                    ? LinearGradient(
+                        colors: [
+                          accent.withOpacity(0.3),
+                          accent.withOpacity(0.1),
+                        ],
+                      )
+                    : null,
+                color: isSelected ? null : Colors.white.withOpacity(0.05),
               ),
               child: Icon(
                 Icons.chat_bubble_outline,
@@ -304,10 +336,18 @@ class _ConversationTile extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
-            trailing: Icon(
-              Icons.chevron_right,
-              size: 18,
-              color: Colors.white.withOpacity(0.2),
+            trailing: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.05),
+              ),
+              child: Icon(
+                Icons.chevron_right,
+                size: 16,
+                color: Colors.white.withOpacity(0.2),
+              ),
             ),
           ),
         ),

@@ -73,6 +73,24 @@ class NexusApp extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
       ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: const Color(0xFF1A1A2E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: const Color(0xFF1A1A2E),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      textSelectionTheme: TextSelectionThemeData(
+        cursorColor: accent,
+        selectionColor: accent.withOpacity(0.3),
+        selectionHandleColor: accent,
+      ),
     );
   }
 }
