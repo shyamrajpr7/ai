@@ -24,6 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _scrollController = ScrollController();
   final _focusNode = FocusNode();
   String? _pendingImageBase64;
+  bool _isImageGen = false;
 
   @override
   void initState() {
@@ -59,12 +60,30 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _pendingImageBase64 = null);
   }
 
+  void _handleToggleImageGen() {
+    setState(() {
+      _isImageGen = !_isImageGen;
+      if (!_isImageGen) _clearImage();
+    });
+  }
+
+  void _handleGenerateImage() {
+    final text = _textController.text;
+    if (text.trim().isEmpty) return;
+    _textController.clear();
+    setState(() => _isImageGen = false);
+    _focusNode.requestFocus();
+    context.read<ChatProvider>().generateImage(text);
+    _scrollToBottom();
+  }
+
   void _handleSend() {
     final text = _textController.text;
     final image = _pendingImageBase64;
     if (text.trim().isEmpty && image == null) return;
     _textController.clear();
     _clearImage();
+    setState(() => _isImageGen = false);
     _focusNode.requestFocus();
     context.read<ChatProvider>().sendMessage(text, imageBase64: image);
     _scrollToBottom();
@@ -89,8 +108,11 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildImagePreview(accent),
                     GlassInputBar(
                       isProcessing: provider.isProcessing,
+                      isImageGen: _isImageGen,
                       onImagePicked: _handleImagePicked,
                       onSend: _handleSend,
+                      onGenerateImage: _handleGenerateImage,
+                      onToggleImageGen: _handleToggleImageGen,
                       controller: _textController,
                     ),
                   ],

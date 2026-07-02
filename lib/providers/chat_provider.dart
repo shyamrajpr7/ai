@@ -9,6 +9,7 @@ import '../services/ai_service.dart';
 import '../services/groq_service.dart';
 import '../services/ollama_service.dart';
 import '../services/web_search_service.dart';
+import '../services/image_gen_service.dart';
 import '../services/hive_service.dart';
 import 'settings_provider.dart';
 
@@ -173,6 +174,62 @@ class ChatProvider extends ChangeNotifier {
     } catch (e) {
       _isProcessing = false;
       _errorMessage = 'Failed to get response. Tap to retry.';
+      notifyListeners();
+    }
+  }
+
+  Future<void> generateImage(String prompt) async {
+    if (prompt.trim().isEmpty || _isProcessing) return;
+
+    if (_currentConversationId == null) {
+      await createConversation();
+    }
+
+    final convIdx =
+        _conversations.indexWhere((c) => c.id == _currentConversationId);
+    if (convIdx == -1) return;
+
+    final conv = _conversations[convIdx];
+
+    final userMsg = ChatMessage(
+      id: _uuid.v4(),
+      content: prompt,
+      role: 'user',
+      timestamp: DateTime.now(),
+    );
+    conv.messages.add(userMsg);
+    conv.updatedAt = DateTime.now();
+
+    _isProcessing = true;
+    _currentResponse = '';
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final service = ImageGenService();
+      final imageBase64 = await service.generateImage(prompt);
+
+      final assistantMsg = ChatMessage(
+        id: _uuid.v4(),
+        content: prompt,
+        role: 'assistant',
+        timestamp: DateTime.now(),
+        imageBase64: imageBase64,
+      );
+      conv.messages.add(assistantMsg);
+
+      if (conv.title == 'New Chat' && conv.messages.length >= 2) {
+        conv.title =
+            prompt.length > 30 ? '${prompt.substring(0, 27)}...' : prompt;
+      }
+
+      _isProcessing = false;
+      _currentResponse = '';
+      await _save();
+      notifyListeners();
+    } catch (e) {
+      _isProcessing = false;
+      _errorMessage = 'Image generation failed. Tap to retry.';
       notifyListeners();
     }
   }

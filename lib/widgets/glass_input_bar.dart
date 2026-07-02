@@ -11,15 +11,21 @@ import 'thinking_indicator.dart';
 
 class GlassInputBar extends StatefulWidget {
   final bool isProcessing;
+  final bool isImageGen;
   final ValueChanged<String> onImagePicked;
   final VoidCallback onSend;
+  final VoidCallback onGenerateImage;
+  final VoidCallback onToggleImageGen;
   final TextEditingController controller;
 
   const GlassInputBar({
     super.key,
     required this.isProcessing,
+    required this.isImageGen,
     required this.onImagePicked,
     required this.onSend,
+    required this.onGenerateImage,
+    required this.onToggleImageGen,
     required this.controller,
   });
 
@@ -112,14 +118,18 @@ class _GlassInputBarState extends State<GlassInputBar>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: Colors.white.withOpacity(0.08),
-          width: 1,
+          color: widget.isImageGen
+              ? accent.withOpacity(0.25)
+              : Colors.white.withOpacity(0.08),
+          width: widget.isImageGen ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: accent.withOpacity(0.1),
-            blurRadius: 20,
-            spreadRadius: 0,
+            color: widget.isImageGen
+                ? accent.withOpacity(0.15)
+                : accent.withOpacity(0.1),
+            blurRadius: widget.isImageGen ? 24 : 20,
+            spreadRadius: widget.isImageGen ? 2 : 0,
           ),
           BoxShadow(
             color: accent.withOpacity(0.05),
@@ -133,7 +143,9 @@ class _GlassInputBarState extends State<GlassInputBar>
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            color: Colors.white.withOpacity(0.04),
+            color: widget.isImageGen
+                ? accent.withOpacity(0.04)
+                : Colors.white.withOpacity(0.04),
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -145,35 +157,72 @@ class _GlassInputBarState extends State<GlassInputBar>
                     maxLines: 4,
                     minLines: 1,
                     textCapitalization: TextCapitalization.sentences,
-                    style: const TextStyle(
-                      color: Colors.white,
+                    style: TextStyle(
+                      color: widget.isImageGen
+                          ? accent.withOpacity(0.9)
+                          : Colors.white,
                       fontSize: 15,
                       fontFamily: 'Inter',
                       height: 1.4,
                     ),
                     decoration: InputDecoration(
                       hintText: widget.isProcessing
-                          ? 'AI is thinking...'
-                          : context.watch<SettingsProvider>().webSearchEnabled
-                              ? 'Message Nexus (web search on)...'
-                              : 'Message Nexus...',
+                          ? 'Generating...'
+                          : widget.isImageGen
+                              ? 'Describe the image you want...'
+                              : context.watch<SettingsProvider>().webSearchEnabled
+                                  ? 'Message Nexus (web search on)...'
+                                  : 'Message Nexus...',
                       hintStyle: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
+                        color: (widget.isImageGen ? accent : Colors.white).withOpacity(0.3),
                         fontSize: 15,
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 10),
                     ),
-                    onSubmitted: (_) => widget.onSend(),
+                    onSubmitted: (_) => widget.isImageGen
+                        ? widget.onGenerateImage()
+                        : widget.onSend(),
                   ),
                 ),
+                _buildGenButton(accent),
                 _buildImageButton(accent),
                 const SizedBox(width: 4),
                 _buildSendButton(accent),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildGenButton(Color accent) {
+    if (widget.isProcessing) return const SizedBox.shrink();
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        widget.onToggleImageGen();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: widget.isImageGen
+              ? accent.withOpacity(0.2)
+              : Colors.transparent,
+        ),
+        child: Icon(
+          widget.isImageGen ? Icons.auto_awesome : Icons.auto_awesome_outlined,
+          color: widget.isImageGen
+              ? accent
+              : Colors.white.withOpacity(0.4),
+          size: 20,
         ),
       ),
     );
@@ -234,7 +283,7 @@ class _GlassInputBarState extends State<GlassInputBar>
   }
 
   Widget _buildImageButton(Color accent) {
-    if (widget.isProcessing) return const SizedBox.shrink();
+    if (widget.isProcessing || widget.isImageGen) return const SizedBox.shrink();
 
     return GestureDetector(
       onTap: _pickImage,
@@ -282,12 +331,19 @@ class _GlassInputBarState extends State<GlassInputBar>
       height: 44,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [
-            accent,
-            const Color(0xFF448AFF),
-          ],
-        ),
+        gradient: widget.isImageGen
+            ? LinearGradient(
+                colors: [
+                  accent,
+                  const Color(0xFFE040FB),
+                ],
+              )
+            : LinearGradient(
+                colors: [
+                  accent,
+                  const Color(0xFF448AFF),
+                ],
+              ),
         boxShadow: [
           BoxShadow(
             color: accent.withOpacity(0.4),
@@ -300,10 +356,10 @@ class _GlassInputBarState extends State<GlassInputBar>
         color: Colors.transparent,
         child: InkWell(
           customBorder: const CircleBorder(),
-          onTap: widget.onSend,
+          onTap: widget.isImageGen ? widget.onGenerateImage : widget.onSend,
           child: Center(
             child: Icon(
-              Icons.arrow_upward_rounded,
+              widget.isImageGen ? Icons.auto_awesome : Icons.arrow_upward_rounded,
               color: Colors.white,
               size: 22,
             ),

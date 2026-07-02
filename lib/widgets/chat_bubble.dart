@@ -288,76 +288,99 @@ class ChatBubble extends StatelessWidget {
       );
     }
 
-    return MarkdownBody(
-      data: message.content,
-      selectable: true,
-      styleSheet: MarkdownStyleSheet(
-        textScaleFactor: 1.0,
-        p: const TextStyle(
-          color: Color(0xFFE0E0FF),
-          fontSize: 15,
-          height: 1.6,
-        ),
-        h1: const TextStyle(
-          color: Colors.white,
-          fontSize: 22,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'SpaceGrotesk',
-        ),
-        h2: const TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'SpaceGrotesk',
-        ),
-        h3: const TextStyle(
-          color: Colors.white,
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          fontFamily: 'SpaceGrotesk',
-        ),
-        strong: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.bold,
-        ),
-        em: const TextStyle(
-          color: Color(0xFFE0E0FF),
-          fontStyle: FontStyle.italic,
-        ),
-        code: const TextStyle(
-          color: Color(0xFFE0E0FF),
-          fontSize: 13,
-          fontFamily: 'monospace',
-          backgroundColor: Color(0xFF1A1A2E),
-        ),
-        codeblockDecoration: BoxDecoration(
-          color: const Color(0xFF1A1A2E),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        blockquoteDecoration: BoxDecoration(
-          border: Border(
-            left: BorderSide(
-              color: const Color(0xFF7C4DFF).withOpacity(0.5),
-              width: 3,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (message.imageBase64 != null) ...[
+          Center(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: GestureDetector(
+                onTap: () => _showImagePreview(context, message.imageBase64!),
+                child: Image.memory(
+                  base64Decode(message.imageBase64!),
+                  width: 240,
+                  height: 240,
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
           ),
-        ),
-        blockquotePadding: const EdgeInsets.only(left: 12),
-        listBullet: const TextStyle(
-          color: Color(0xFF7C4DFF),
-        ),
-        horizontalRuleDecoration: BoxDecoration(
-          border: Border(
-            top: BorderSide(
-              color: Colors.white.withOpacity(0.1),
-              width: 1,
+          if (message.content.isNotEmpty) const SizedBox(height: 10),
+        ],
+        if (message.content.isNotEmpty)
+          MarkdownBody(
+            data: message.content,
+            selectable: true,
+            styleSheet: MarkdownStyleSheet(
+              p: const TextStyle(
+                color: Color(0xFFE0E0FF),
+                fontSize: 15,
+                height: 1.6,
+              ),
+              h1: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'SpaceGrotesk',
+              ),
+              h2: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'SpaceGrotesk',
+              ),
+              h3: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'SpaceGrotesk',
+              ),
+              strong: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+              em: const TextStyle(
+                color: Color(0xFFE0E0FF),
+                fontStyle: FontStyle.italic,
+              ),
+              code: const TextStyle(
+                color: Color(0xFFE0E0FF),
+                fontSize: 13,
+                fontFamily: 'monospace',
+                backgroundColor: Color(0xFF1A1A2E),
+              ),
+              codeblockDecoration: BoxDecoration(
+                color: const Color(0xFF1A1A2E),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              blockquoteDecoration: BoxDecoration(
+                border: Border(
+                  left: BorderSide(
+                    color: const Color(0xFF7C4DFF).withOpacity(0.5),
+                    width: 3,
+                  ),
+                ),
+              ),
+              blockquotePadding: const EdgeInsets.only(left: 12),
+              listBullet: const TextStyle(
+                color: Color(0xFF7C4DFF),
+              ),
+              horizontalRuleDecoration: BoxDecoration(
+                border: Border(
+                  top: BorderSide(
+                    color: Colors.white.withOpacity(0.1),
+                    width: 1,
+                  ),
+                ),
+              ),
             ),
+            builders: {
+              'pre': CodeBlockBuilder(),
+            },
           ),
-        ),
-      ),
-      builders: {
-        'pre': CodeBlockBuilder(),
-      },
+      ],
     );
   }
 
