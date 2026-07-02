@@ -49,5 +49,7 @@
 	<string>Nexus needs speech recognition to convert your voice to text for messaging.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Nexus needs microphone access to capture your voice for speech-to-text.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Nexus needs photo library access to attach images to your messages.</string>
 </dict>
 </plist>

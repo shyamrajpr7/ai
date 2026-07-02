@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../providers/settings_provider.dart';
@@ -8,12 +11,14 @@ import 'thinking_indicator.dart';
 
 class GlassInputBar extends StatefulWidget {
   final bool isProcessing;
-  final VoidCallback? onSend;
+  final ValueChanged<String> onImagePicked;
+  final VoidCallback onSend;
   final TextEditingController controller;
 
   const GlassInputBar({
     super.key,
     required this.isProcessing,
+    required this.onImagePicked,
     required this.onSend,
     required this.controller,
   });
@@ -25,6 +30,7 @@ class GlassInputBar extends StatefulWidget {
 class _GlassInputBarState extends State<GlassInputBar>
     with SingleTickerProviderStateMixin {
   final stt.SpeechToText _speech = stt.SpeechToText();
+  final ImagePicker _picker = ImagePicker();
   bool _isListening = false;
   bool _speechAvailable = false;
   late AnimationController _pulseController;
@@ -62,7 +68,7 @@ class _GlassInputBarState extends State<GlassInputBar>
           _pulseController.stop();
           widget.controller.text = result.recognizedWords;
           if (result.recognizedWords.trim().isNotEmpty) {
-            _send();
+            widget.onSend();
           }
         }
       },
@@ -80,6 +86,14 @@ class _GlassInputBarState extends State<GlassInputBar>
     _speech.stop();
     _pulseController.stop();
     setState(() => _isListening = false);
+  }
+
+  Future<void> _pickImage() async {
+    final file = await _picker.pickImage(source: ImageSource.gallery, maxWidth: 1024);
+    if (file == null) return;
+    final bytes = await File(file.path).readAsBytes();
+    final base64 = base64Encode(bytes);
+    widget.onImagePicked(base64);
   }
 
   @override
@@ -151,9 +165,10 @@ class _GlassInputBarState extends State<GlassInputBar>
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 10),
                     ),
-                    onSubmitted: (_) => _send(),
+                    onSubmitted: (_) => widget.onSend(),
                   ),
                 ),
+                _buildImageButton(accent),
                 const SizedBox(width: 4),
                 _buildSendButton(accent),
               ],
@@ -218,6 +233,27 @@ class _GlassInputBarState extends State<GlassInputBar>
     );
   }
 
+  Widget _buildImageButton(Color accent) {
+    if (widget.isProcessing) return const SizedBox.shrink();
+
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.transparent,
+        ),
+        child: Icon(
+          Icons.image_outlined,
+          color: Colors.white.withOpacity(0.4),
+          size: 22,
+        ),
+      ),
+    );
+  }
+
   Widget _buildSendButton(Color accent) {
     if (widget.isProcessing) {
       return Container(
@@ -264,7 +300,7 @@ class _GlassInputBarState extends State<GlassInputBar>
         color: Colors.transparent,
         child: InkWell(
           customBorder: const CircleBorder(),
-          onTap: _send,
+          onTap: widget.onSend,
           child: Center(
             child: Icon(
               Icons.arrow_upward_rounded,
@@ -275,10 +311,5 @@ class _GlassInputBarState extends State<GlassInputBar>
         ),
       ),
     );
-  }
-
-  void _send() {
-    HapticFeedback.lightImpact();
-    widget.onSend?.call();
   }
 }

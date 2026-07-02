@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
@@ -75,7 +76,7 @@ class ChatBubble extends StatelessWidget {
                       ),
                     ],
                   ),
-                  child: _buildContent(isUser, accent),
+                  child: _buildContent(context, isUser, accent),
                 )
                     .animate()
                     .fadeIn(
@@ -159,7 +160,7 @@ class ChatBubble extends StatelessWidget {
     );
   }
 
-  Widget _buildContent(bool isUser, Color accent) {
+  Widget _buildContent(BuildContext context, bool isUser, Color accent) {
     if (isError) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -247,22 +248,43 @@ class ChatBubble extends StatelessWidget {
     }
 
     if (isUser) {
-      return MarkdownBody(
-        data: message.content,
-        styleSheet: MarkdownStyleSheet(
-          textScaleFactor: 1.0,
-          p: TextStyle(
-            color: Colors.white.withOpacity(0.95),
-            fontSize: 15,
-            height: 1.6,
-          ),
-          code: const TextStyle(
-            color: Color(0xFFE0E0FF),
-            fontSize: 13,
-            backgroundColor: Color(0xFF1A1A2E),
-          ),
-          codeblockDecoration: const BoxDecoration(),
-        ),
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (message.imageBase64 != null) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: GestureDetector(
+                onTap: () => _showImagePreview(context, message.imageBase64!),
+                child: Image.memory(
+                  base64Decode(message.imageBase64!),
+                  width: 160,
+                  height: 160,
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
+            if (message.content.isNotEmpty) const SizedBox(height: 8),
+          ],
+          if (message.content.isNotEmpty)
+            MarkdownBody(
+              data: message.content,
+              styleSheet: MarkdownStyleSheet(
+                p: TextStyle(
+                  color: Colors.white.withOpacity(0.95),
+                  fontSize: 15,
+                  height: 1.6,
+                ),
+                code: const TextStyle(
+                  color: Color(0xFFE0E0FF),
+                  fontSize: 13,
+                  backgroundColor: Color(0xFF1A1A2E),
+                ),
+                codeblockDecoration: const BoxDecoration(),
+              ),
+            ),
+        ],
       );
     }
 
@@ -336,6 +358,27 @@ class ChatBubble extends StatelessWidget {
       builders: {
         'pre': CodeBlockBuilder(),
       },
+    );
+  }
+
+  void _showImagePreview(BuildContext context, String base64) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: InteractiveViewer(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.memory(
+                base64Decode(base64),
+                fit: BoxFit.contain,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

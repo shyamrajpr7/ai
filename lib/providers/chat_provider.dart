@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:uuid/uuid.dart';
@@ -82,8 +84,9 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> sendMessage(String text) async {
-    if (text.trim().isEmpty || _isProcessing) return;
+  Future<void> sendMessage(String text, {String? imageBase64}) async {
+    if (text.trim().isEmpty && imageBase64 == null) return;
+    if (_isProcessing) return;
 
     if (_currentConversationId == null) {
       await createConversation();
@@ -100,6 +103,7 @@ class ChatProvider extends ChangeNotifier {
       content: text,
       role: 'user',
       timestamp: DateTime.now(),
+      imageBase64: imageBase64,
     );
     conv.messages.add(userMsg);
     conv.updatedAt = DateTime.now();
@@ -115,8 +119,12 @@ class ChatProvider extends ChangeNotifier {
         try {
           final searchApiKey = dotenv.env['TAVILY_API_KEY'] ?? '';
           if (searchApiKey.isNotEmpty) {
+            String searchQuery = text;
+            if (imageBase64 != null && text.trim().isEmpty) {
+              searchQuery = 'Identify this image and describe what is in it';
+            }
             final searchService = WebSearchService(apiKey: searchApiKey);
-            webSearchContext = await searchService.search(text);
+            webSearchContext = await searchService.search(searchQuery);
           }
         } catch (e) {
           debugPrint('Web search failed: $e');
@@ -135,6 +143,7 @@ class ChatProvider extends ChangeNotifier {
         message: text,
         history: history,
         webSearchContext: webSearchContext,
+        imageBase64: imageBase64,
       )) {
         fullResponse.write(chunk);
         _currentResponse = fullResponse.toString();
@@ -182,18 +191,20 @@ class ChatProvider extends ChangeNotifier {
     }
 
     String? lastUserText;
+    String? lastImage;
     final lastUserIdx = conv.messages.lastIndexWhere((m) => m.role == 'user');
     if (lastUserIdx != -1) {
       lastUserText = conv.messages[lastUserIdx].content;
+      lastImage = conv.messages[lastUserIdx].imageBase64;
       conv.messages.removeAt(lastUserIdx);
     }
 
-    if (lastUserText == null) return;
+    if (lastUserText == null && lastImage == null) return;
 
     _errorMessage = null;
     notifyListeners();
 
-    await sendMessage(lastUserText);
+    await sendMessage(lastUserText ?? '', imageBase64: lastImage);
   }
 
   AIService _createAIService() {

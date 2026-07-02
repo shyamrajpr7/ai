@@ -6,6 +6,7 @@ class ChatMessage {
   final String role;
   final DateTime timestamp;
   final MessageStatus status;
+  final String? imageBase64;
 
   const ChatMessage({
     required this.id,
@@ -13,6 +14,7 @@ class ChatMessage {
     required this.role,
     required this.timestamp,
     this.status = MessageStatus.sent,
+    this.imageBase64,
   });
 
   ChatMessage copyWith({
@@ -21,6 +23,7 @@ class ChatMessage {
     String? role,
     DateTime? timestamp,
     MessageStatus? status,
+    String? imageBase64,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -28,6 +31,7 @@ class ChatMessage {
       role: role ?? this.role,
       timestamp: timestamp ?? this.timestamp,
       status: status ?? this.status,
+      imageBase64: imageBase64 ?? this.imageBase64,
     );
   }
 
@@ -37,6 +41,7 @@ class ChatMessage {
     'role': role,
     'timestamp': timestamp.toIso8601String(),
     'status': status.index,
+    if (imageBase64 != null) 'imageBase64': imageBase64,
   };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) => ChatMessage(
@@ -45,5 +50,6 @@ class ChatMessage {
     role: json['role'] as String,
     timestamp: DateTime.parse(json['timestamp'] as String),
     status: MessageStatus.values[json['status'] as int],
+    imageBase64: json['imageBase64'] as String?,
   );
 }

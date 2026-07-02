@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -22,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _textController = TextEditingController();
   final _scrollController = ScrollController();
   final _focusNode = FocusNode();
+  String? _pendingImageBase64;
 
   @override
   void initState() {
@@ -49,12 +51,22 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void _handleImagePicked(String base64) {
+    setState(() => _pendingImageBase64 = base64);
+  }
+
+  void _clearImage() {
+    setState(() => _pendingImageBase64 = null);
+  }
+
   void _handleSend() {
     final text = _textController.text;
-    if (text.trim().isEmpty) return;
+    final image = _pendingImageBase64;
+    if (text.trim().isEmpty && image == null) return;
     _textController.clear();
+    _clearImage();
     _focusNode.requestFocus();
-    context.read<ChatProvider>().sendMessage(text);
+    context.read<ChatProvider>().sendMessage(text, imageBase64: image);
     _scrollToBottom();
   }
 
@@ -73,18 +85,72 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     _buildHeader(scaffoldCtx, accent, provider),
                     Expanded(child: _buildMessages(provider, accent)),
+                    if (_pendingImageBase64 != null)
+                      _buildImagePreview(accent),
                     GlassInputBar(
-                    isProcessing: provider.isProcessing,
-                    onSend: _handleSend,
-                    controller: _textController,
-                  ),
-                ],
+                      isProcessing: provider.isProcessing,
+                      onImagePicked: _handleImagePicked,
+                      onSend: _handleSend,
+                      controller: _textController,
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
       },
+    );
+  }
+
+  Widget _buildImagePreview(Color accent) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.04),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withOpacity(0.08)),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.memory(
+              base64Decode(_pendingImageBase64!),
+              width: 48,
+              height: 48,
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Image attached',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.6),
+                fontSize: 13,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: _clearImage,
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.1),
+              ),
+              child: Icon(
+                Icons.close,
+                size: 16,
+                color: Colors.white.withOpacity(0.5),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
+      ),
     );
   }
 

@@ -3,5 +3,6 @@ abstract class AIService {
     required String message,
     required List<Map<String, String>> history,
     String webSearchContext = '',
+    String? imageBase64,
   });
 }
