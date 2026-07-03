@@ -337,6 +337,24 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  List<Map<String, dynamic>> searchMessages(String query) {
+    if (query.trim().isEmpty) return [];
+    final lower = query.toLowerCase();
+    final results = <Map<String, dynamic>>[];
+    for (final conv in _conversations) {
+      for (final msg in conv.messages) {
+        if (msg.content.toLowerCase().contains(lower)) {
+          results.add({
+            'conversationId': conv.id,
+            'conversationTitle': conv.title,
+            'message': msg,
+          });
+        }
+      }
+    }
+    return results;
+  }
+
   Future<void> _save() async {
     await _hiveService.saveConversations(_conversations);
   }
