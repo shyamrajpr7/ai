@@ -12,20 +12,26 @@ import 'thinking_indicator.dart';
 class GlassInputBar extends StatefulWidget {
   final bool isProcessing;
   final bool isImageGen;
+  final bool isVideoGen;
   final ValueChanged<String> onImagePicked;
   final VoidCallback onSend;
   final VoidCallback onGenerateImage;
+  final VoidCallback onGenerateVideo;
   final VoidCallback onToggleImageGen;
+  final VoidCallback onToggleVideoGen;
   final TextEditingController controller;
 
   const GlassInputBar({
     super.key,
     required this.isProcessing,
     required this.isImageGen,
+    required this.isVideoGen,
     required this.onImagePicked,
     required this.onSend,
     required this.onGenerateImage,
+    required this.onGenerateVideo,
     required this.onToggleImageGen,
+    required this.onToggleVideoGen,
     required this.controller,
   });
 
@@ -109,6 +115,26 @@ class _GlassInputBarState extends State<GlassInputBar>
     super.dispose();
   }
 
+  bool get _isActive => widget.isImageGen || widget.isVideoGen;
+
+  String get _hintText {
+    if (widget.isImageGen) return 'Describe the image you want...';
+    if (widget.isVideoGen) return 'Describe the video you want...';
+    return context.watch<SettingsProvider>().webSearchEnabled
+        ? 'Message Nexus (web search on)...'
+        : 'Message Nexus...';
+  }
+
+  void _onSubmit() {
+    if (widget.isImageGen) {
+      widget.onGenerateImage();
+    } else if (widget.isVideoGen) {
+      widget.onGenerateVideo();
+    } else {
+      widget.onSend();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final accent = const Color(0xFF7C4DFF);
@@ -118,18 +144,18 @@ class _GlassInputBarState extends State<GlassInputBar>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: widget.isImageGen
+          color: _isActive
               ? accent.withOpacity(0.25)
               : Colors.white.withOpacity(0.08),
-          width: widget.isImageGen ? 1.5 : 1,
+          width: _isActive ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: widget.isImageGen
+            color: _isActive
                 ? accent.withOpacity(0.15)
                 : accent.withOpacity(0.1),
-            blurRadius: widget.isImageGen ? 24 : 20,
-            spreadRadius: widget.isImageGen ? 2 : 0,
+            blurRadius: _isActive ? 24 : 20,
+            spreadRadius: _isActive ? 2 : 0,
           ),
           BoxShadow(
             color: accent.withOpacity(0.05),
@@ -143,7 +169,7 @@ class _GlassInputBarState extends State<GlassInputBar>
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
           child: Container(
-            color: widget.isImageGen
+            color: _isActive
                 ? accent.withOpacity(0.04)
                 : Colors.white.withOpacity(0.04),
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
@@ -158,7 +184,7 @@ class _GlassInputBarState extends State<GlassInputBar>
                     minLines: 1,
                     textCapitalization: TextCapitalization.sentences,
                     style: TextStyle(
-                      color: widget.isImageGen
+                      color: _isActive
                           ? accent.withOpacity(0.9)
                           : Colors.white,
                       fontSize: 15,
@@ -168,25 +194,20 @@ class _GlassInputBarState extends State<GlassInputBar>
                     decoration: InputDecoration(
                       hintText: widget.isProcessing
                           ? 'Generating...'
-                          : widget.isImageGen
-                              ? 'Describe the image you want...'
-                              : context.watch<SettingsProvider>().webSearchEnabled
-                                  ? 'Message Nexus (web search on)...'
-                                  : 'Message Nexus...',
+                          : _hintText,
                       hintStyle: TextStyle(
-                        color: (widget.isImageGen ? accent : Colors.white).withOpacity(0.3),
+                        color: (_isActive ? accent : Colors.white).withOpacity(0.3),
                         fontSize: 15,
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 10),
                     ),
-                    onSubmitted: (_) => widget.isImageGen
-                        ? widget.onGenerateImage()
-                        : widget.onSend(),
+                    onSubmitted: (_) => _onSubmit(),
                   ),
                 ),
                 _buildGenButton(accent),
+                _buildVideoGenButton(accent),
                 _buildImageButton(accent),
                 const SizedBox(width: 4),
                 _buildSendButton(accent),
@@ -199,7 +220,7 @@ class _GlassInputBarState extends State<GlassInputBar>
   }
 
   Widget _buildGenButton(Color accent) {
-    if (widget.isProcessing) return const SizedBox.shrink();
+    if (widget.isProcessing || widget.isVideoGen) return const SizedBox.shrink();
 
     return GestureDetector(
       onTap: () {
@@ -220,6 +241,36 @@ class _GlassInputBarState extends State<GlassInputBar>
         child: Icon(
           widget.isImageGen ? Icons.auto_awesome : Icons.auto_awesome_outlined,
           color: widget.isImageGen
+              ? accent
+              : Colors.white.withOpacity(0.4),
+          size: 20,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVideoGenButton(Color accent) {
+    if (widget.isProcessing || widget.isImageGen) return const SizedBox.shrink();
+
+    return GestureDetector(
+      onTap: () {
+        HapticFeedback.lightImpact();
+        widget.onToggleVideoGen();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: widget.isVideoGen
+              ? accent.withOpacity(0.2)
+              : Colors.transparent,
+        ),
+        child: Icon(
+          widget.isVideoGen ? Icons.videocam : Icons.videocam_outlined,
+          color: widget.isVideoGen
               ? accent
               : Colors.white.withOpacity(0.4),
           size: 20,
@@ -283,7 +334,7 @@ class _GlassInputBarState extends State<GlassInputBar>
   }
 
   Widget _buildImageButton(Color accent) {
-    if (widget.isProcessing || widget.isImageGen) return const SizedBox.shrink();
+    if (widget.isProcessing || _isActive) return const SizedBox.shrink();
 
     return GestureDetector(
       onTap: _pickImage,
@@ -338,12 +389,19 @@ class _GlassInputBarState extends State<GlassInputBar>
                   const Color(0xFFE040FB),
                 ],
               )
-            : LinearGradient(
-                colors: [
-                  accent,
-                  const Color(0xFF448AFF),
-                ],
-              ),
+            : widget.isVideoGen
+                ? LinearGradient(
+                    colors: [
+                      accent,
+                      const Color(0xFF00E5FF),
+                    ],
+                  )
+                : LinearGradient(
+                    colors: [
+                      accent,
+                      const Color(0xFF448AFF),
+                    ],
+                  ),
         boxShadow: [
           BoxShadow(
             color: accent.withOpacity(0.4),
@@ -356,10 +414,18 @@ class _GlassInputBarState extends State<GlassInputBar>
         color: Colors.transparent,
         child: InkWell(
           customBorder: const CircleBorder(),
-          onTap: widget.isImageGen ? widget.onGenerateImage : widget.onSend,
+          onTap: widget.isImageGen
+              ? widget.onGenerateImage
+              : widget.isVideoGen
+                  ? widget.onGenerateVideo
+                  : widget.onSend,
           child: Center(
             child: Icon(
-              widget.isImageGen ? Icons.auto_awesome : Icons.arrow_upward_rounded,
+              widget.isImageGen
+                  ? Icons.auto_awesome
+                  : widget.isVideoGen
+                      ? Icons.videocam
+                      : Icons.arrow_upward_rounded,
               color: Colors.white,
               size: 22,
             ),

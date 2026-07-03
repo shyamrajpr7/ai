@@ -25,6 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _focusNode = FocusNode();
   String? _pendingImageBase64;
   bool _isImageGen = false;
+  bool _isVideoGen = false;
 
   @override
   void initState() {
@@ -63,7 +64,16 @@ class _HomeScreenState extends State<HomeScreen> {
   void _handleToggleImageGen() {
     setState(() {
       _isImageGen = !_isImageGen;
+      _isVideoGen = false;
       if (!_isImageGen) _clearImage();
+    });
+  }
+
+  void _handleToggleVideoGen() {
+    setState(() {
+      _isVideoGen = !_isVideoGen;
+      _isImageGen = false;
+      if (!_isVideoGen) _clearImage();
     });
   }
 
@@ -77,13 +87,26 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollToBottom();
   }
 
+  void _handleGenerateVideo() {
+    final text = _textController.text;
+    if (text.trim().isEmpty) return;
+    _textController.clear();
+    setState(() => _isVideoGen = false);
+    _focusNode.requestFocus();
+    context.read<ChatProvider>().generateVideo(text);
+    _scrollToBottom();
+  }
+
   void _handleSend() {
     final text = _textController.text;
     final image = _pendingImageBase64;
     if (text.trim().isEmpty && image == null) return;
     _textController.clear();
     _clearImage();
-    setState(() => _isImageGen = false);
+    setState(() {
+      _isImageGen = false;
+      _isVideoGen = false;
+    });
     _focusNode.requestFocus();
     context.read<ChatProvider>().sendMessage(text, imageBase64: image);
     _scrollToBottom();
@@ -109,10 +132,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     GlassInputBar(
                       isProcessing: provider.isProcessing,
                       isImageGen: _isImageGen,
+                      isVideoGen: _isVideoGen,
                       onImagePicked: _handleImagePicked,
                       onSend: _handleSend,
                       onGenerateImage: _handleGenerateImage,
+                      onGenerateVideo: _handleGenerateVideo,
                       onToggleImageGen: _handleToggleImageGen,
+                      onToggleVideoGen: _handleToggleVideoGen,
                       controller: _textController,
                     ),
                   ],

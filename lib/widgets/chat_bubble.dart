@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:video_player/video_player.dart';
 import '../models/chat_message.dart';
 import 'glow_text.dart';
 import 'code_block.dart';
@@ -252,6 +254,16 @@ class ChatBubble extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
+          if (message.videoPath != null) ...[
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: _VideoPlayerWidget(
+                videoPath: message.videoPath!,
+                width: 160,
+              ),
+            ),
+            if (message.content.isNotEmpty) const SizedBox(height: 8),
+          ],
           if (message.imageBase64 != null) ...[
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
@@ -292,6 +304,12 @@ class ChatBubble extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (message.videoPath != null) ...[
+          Center(
+            child: _VideoPlayerWidget(videoPath: message.videoPath!),
+          ),
+          if (message.content.isNotEmpty) const SizedBox(height: 10),
+        ],
         if (message.imageBase64 != null) ...[
           Center(
             child: ClipRRect(
@@ -400,6 +418,149 @@ class ChatBubble extends StatelessWidget {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoPlayerWidget extends StatefulWidget {
+  final String videoPath;
+  final double width;
+
+  const _VideoPlayerWidget({
+    required this.videoPath,
+    this.width = 240,
+  });
+
+  @override
+  State<_VideoPlayerWidget> createState() => _VideoPlayerWidgetState();
+}
+
+class _VideoPlayerWidgetState extends State<_VideoPlayerWidget> {
+  VideoPlayerController? _controller;
+  bool _initialized = false;
+  bool _isPlaying = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initVideo();
+  }
+
+  Future<void> _initVideo() async {
+    final file = File(widget.videoPath);
+    if (!await file.exists()) return;
+
+    final controller = VideoPlayerController.file(file);
+    await controller.initialize();
+    controller.setLooping(true);
+    if (mounted) {
+      setState(() {
+        _controller = controller;
+        _initialized = true;
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  void _togglePlay() {
+    if (_controller == null) return;
+    setState(() {
+      if (_isPlaying) {
+        _controller!.pause();
+      } else {
+        _controller!.play();
+      }
+      _isPlaying = !_isPlaying;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_initialized) {
+      return Container(
+        width: widget.width,
+        height: widget.width * 0.75,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Center(
+          child: SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Color(0xFF7C4DFF),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final size = _controller!.value.size;
+    final aspectRatio = size.aspectRatio;
+
+    return GestureDetector(
+      onTap: _togglePlay,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              width: widget.width,
+              child: AspectRatio(
+                aspectRatio: aspectRatio,
+                child: VideoPlayer(_controller!),
+              ),
+            ),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black.withOpacity(0.5),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1.5,
+                ),
+              ),
+              child: Icon(
+                _isPlaying ? Icons.pause : Icons.play_arrow_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
+            ),
+            if (!_isPlaying)
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    'AI Video',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+              ),
+          ],
         ),
       ),
     );
