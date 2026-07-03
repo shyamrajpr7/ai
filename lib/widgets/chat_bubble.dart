@@ -96,13 +96,32 @@ class ChatBubble extends StatelessWidget {
                       left: isUser ? 0 : 4,
                       right: isUser ? 4 : 0,
                     ),
-                    child: Text(
-                      _formatTime(message.timestamp),
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.15),
-                        fontSize: 11,
-                        fontFamily: 'Inter',
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          _formatTime(message.timestamp),
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.15),
+                            fontSize: 11,
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                        if (!isUser) ...[
+                          const SizedBox(width: 8),
+                          GestureDetector(
+                            onTap: () {
+                              Clipboard.setData(ClipboardData(text: message.content));
+                              HapticFeedback.lightImpact();
+                            },
+                            child: Icon(
+                              Icons.copy_rounded,
+                              size: 12,
+                              color: Colors.white.withOpacity(0.15),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
               ],
