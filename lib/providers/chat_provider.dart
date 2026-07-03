@@ -139,6 +139,7 @@ class ChatProvider extends ChangeNotifier {
           .toList();
 
       final aiService = _createAIService();
+      final systemPrompt = _settingsProvider.activePersona.systemPrompt;
       final fullResponse = StringBuffer();
 
       await for (final chunk in aiService.streamResponse(
@@ -146,6 +147,7 @@ class ChatProvider extends ChangeNotifier {
         history: history,
         webSearchContext: webSearchContext,
         imageBase64: imageBase64,
+        systemPrompt: systemPrompt,
       )) {
         fullResponse.write(chunk);
         _currentResponse = fullResponse.toString();

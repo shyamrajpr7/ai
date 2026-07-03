@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:uuid/uuid.dart';
+import '../models/persona.dart';
 import '../services/hive_service.dart';
+
+const _uuid = Uuid();
 
 enum BackendType { groq, ollama }
 
@@ -13,6 +17,8 @@ class SettingsProvider extends ChangeNotifier {
   String _ollamaModel = 'llama3.2';
   bool _webSearchEnabled = false;
   bool _initialized = false;
+  List<Persona> _personas = [];
+  String _activePersonaId = 'default-assistant';
 
   Color get accentColor => _accentColor;
   BackendType get backend => _backend;
@@ -21,6 +27,14 @@ class SettingsProvider extends ChangeNotifier {
   String get ollamaModel => _ollamaModel;
   bool get webSearchEnabled => _webSearchEnabled;
   bool get initialized => _initialized;
+  List<Persona> get personas => _personas;
+
+  Persona get activePersona {
+    final idx = _personas.indexWhere((p) => p.id == _activePersonaId);
+    return idx != -1
+        ? _personas[idx]
+        : Persona.defaults.first;
+  }
 
   SettingsProvider(this._hiveService);
 
@@ -34,6 +48,16 @@ class SettingsProvider extends ChangeNotifier {
           data['ollamaEndpoint'] as String? ?? 'http://localhost:11434/v1';
       _ollamaModel = data['ollamaModel'] as String? ?? 'llama3.2';
       _webSearchEnabled = data['webSearchEnabled'] as bool? ?? false;
+      _activePersonaId = data['activePersonaId'] as String? ?? 'default-assistant';
+      final personasRaw = data['personas'] as List<dynamic>?;
+      if (personasRaw != null) {
+        _personas = personasRaw
+            .map((e) => Persona.fromJson(e as Map<String, dynamic>))
+            .toList();
+      }
+    }
+    if (_personas.isEmpty) {
+      _personas = Persona.defaults.map((p) => p.copyWith()).toList();
     }
     _initialized = true;
     notifyListeners();
@@ -75,6 +99,36 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setActivePersona(String id) async {
+    _activePersonaId = id;
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> addPersona(Persona persona) async {
+    _personas.add(persona);
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> updatePersona(Persona persona) async {
+    final idx = _personas.indexWhere((p) => p.id == persona.id);
+    if (idx != -1) {
+      _personas[idx] = persona;
+      await _save();
+      notifyListeners();
+    }
+  }
+
+  Future<void> deletePersona(String id) async {
+    _personas.removeWhere((p) => p.id == id);
+    if (_activePersonaId == id) {
+      _activePersonaId = _personas.isNotEmpty ? _personas.first.id : 'default-assistant';
+    }
+    await _save();
+    notifyListeners();
+  }
+
   Future<void> _save() async {
     await _hiveService.saveSettings({
       'accentColor': _accentColor.value,
@@ -83,6 +137,8 @@ class SettingsProvider extends ChangeNotifier {
       'ollamaEndpoint': _ollamaEndpoint,
       'ollamaModel': _ollamaModel,
       'webSearchEnabled': _webSearchEnabled,
+      'activePersonaId': _activePersonaId,
+      'personas': _personas.map((p) => p.toJson()).toList(),
     });
   }
 }

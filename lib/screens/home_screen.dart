@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/settings_provider.dart';
+import '../models/persona.dart';
 import '../widgets/gradient_mesh_background.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/glass_input_bar.dart';
@@ -120,6 +121,190 @@ class _HomeScreenState extends State<HomeScreen> {
       _searchResults = [];
     });
     _searchFocusNode.unfocus();
+  }
+
+  void _showPersonaPicker(BuildContext buildContext) {
+    final settings = context.read<SettingsProvider>();
+    final accent = settings.accentColor;
+
+    showModalBottomSheet(
+      context: buildContext,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF0A0A0F),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(
+            top: BorderSide(color: Colors.white.withOpacity(0.06)),
+          ),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).padding.bottom + 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                children: [
+                  Text(
+                    'Choose Persona',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.7),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: 'SpaceGrotesk',
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const SettingsScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: accent.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.tune, size: 14, color: accent),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Manage',
+                            style: TextStyle(
+                              color: accent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(color: Color(0xFF1A1A2E), height: 1),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(ctx).size.height * 0.4,
+              ),
+              child: ListView(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                children: settings.personas.map((p) {
+                  final isActive = p.id == settings.activePersona.id;
+                  return GestureDetector(
+                    onTap: () {
+                      settings.setActivePersona(p.id);
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 3),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? p.color.withOpacity(0.1)
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(14),
+                        border: isActive
+                            ? Border.all(color: p.color.withOpacity(0.25))
+                            : null,
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isActive
+                                  ? p.color.withOpacity(0.15)
+                                  : Colors.white.withOpacity(0.04),
+                            ),
+                            child: Center(
+                              child: Text(p.emoji,
+                                  style: const TextStyle(fontSize: 20)),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  p.name,
+                                  style: TextStyle(
+                                    color: isActive
+                                        ? Colors.white
+                                        : Colors.white.withOpacity(0.7),
+                                    fontSize: 15,
+                                    fontWeight: isActive
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  p.systemPrompt.length > 50
+                                      ? '${p.systemPrompt.substring(0, 47)}...'
+                                      : p.systemPrompt,
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.3),
+                                    fontSize: 11,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isActive)
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: p.color,
+                              ),
+                              child: const Icon(
+                                Icons.check,
+                                size: 14,
+                                color: Colors.white,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _onSearchChanged(String value) {
@@ -267,33 +452,50 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       onPressed: () => Scaffold.of(buildContext).openDrawer(),
                     ),
-                    Container(
-                      width: 30,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [accent, const Color(0xFF448AFF)],
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: accent.withOpacity(0.3),
-                            blurRadius: 8,
+                    GestureDetector(
+                      onTap: () => _showPersonaPicker(buildContext),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 30,
+                            height: 30,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [accent, const Color(0xFF448AFF)],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: accent.withOpacity(0.3),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                context.watch<SettingsProvider>().activePersona.emoji,
+                                style: const TextStyle(fontSize: 15),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            context.watch<SettingsProvider>().activePersona.name,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'SpaceGrotesk',
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: Colors.white.withOpacity(0.3),
+                            size: 18,
                           ),
                         ],
-                      ),
-                      child: Center(
-                        child: Icon(Icons.auto_awesome, size: 15, color: Colors.white),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Nexus',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'SpaceGrotesk',
                       ),
                     ),
                     const Spacer(),

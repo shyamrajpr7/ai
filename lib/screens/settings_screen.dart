@@ -2,9 +2,13 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 import '../providers/settings_provider.dart';
 import '../providers/chat_provider.dart';
+import '../models/persona.dart';
 import '../widgets/gradient_mesh_background.dart';
+
+const _uuid = Uuid();
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -203,6 +207,8 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 14),
+            _buildPersonaSection(context, settings, accent),
             const SizedBox(height: 14),
             _buildSection(
               'Data',
@@ -404,6 +410,346 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildPersonaSection(BuildContext context, SettingsProvider settings, Color accent) {
+    final personas = settings.personas;
+    return _buildSection(
+      'Personas',
+      Icons.face_outlined,
+      accent,
+      children: [
+        _buildLabel('Active Persona'),
+        const SizedBox(height: 10),
+        ...personas.map((p) {
+          final isActive = p.id == settings.activePersona.id;
+          return GestureDetector(
+            onTap: () => settings.setActivePersona(p.id),
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 6),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isActive
+                    ? accent.withOpacity(0.1)
+                    : Colors.white.withOpacity(0.03),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isActive
+                      ? accent.withOpacity(0.3)
+                      : Colors.white.withOpacity(0.05),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isActive
+                          ? p.color.withOpacity(0.15)
+                          : Colors.white.withOpacity(0.05),
+                    ),
+                    child: Center(
+                      child: Text(
+                        p.emoji,
+                        style: const TextStyle(fontSize: 18),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          p.name,
+                          style: TextStyle(
+                            color: isActive
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.7),
+                            fontSize: 14,
+                            fontWeight:
+                                isActive ? FontWeight.w600 : FontWeight.w400,
+                            fontFamily: 'Inter',
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          p.systemPrompt.length > 60
+                              ? '${p.systemPrompt.substring(0, 57)}...'
+                              : p.systemPrompt,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.3),
+                            fontSize: 11,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isActive)
+                    Container(
+                      width: 22,
+                      height: 22,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accent,
+                      ),
+                      child: const Icon(
+                        Icons.check,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  if (!isActive)
+                    GestureDetector(
+                      onTap: () => _editPersona(context, settings, p),
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withOpacity(0.05),
+                        ),
+                        child: Icon(
+                          Icons.edit_outlined,
+                          size: 16,
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        }),
+        const SizedBox(height: 8),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => _createPersona(context, settings),
+            icon: const Icon(Icons.add, size: 18),
+            label: const Text('Add Persona'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: accent,
+              side: BorderSide(color: accent.withOpacity(0.25)),
+              backgroundColor: accent.withOpacity(0.05),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _createPersona(BuildContext context, SettingsProvider settings) {
+    _showPersonaDialog(
+      context,
+      settings,
+      title: 'Create Persona',
+      onSave: (name, prompt, emoji) {
+        final persona = Persona(
+          id: _uuid.v4(),
+          name: name,
+          systemPrompt: prompt,
+          emoji: emoji,
+        );
+        settings.addPersona(persona);
+        settings.setActivePersona(persona.id);
+      },
+    );
+  }
+
+  void _editPersona(
+      BuildContext context, SettingsProvider settings, Persona persona) {
+    _showPersonaDialog(
+      context,
+      settings,
+      title: 'Edit Persona',
+      initialName: persona.name,
+      initialPrompt: persona.systemPrompt,
+      initialEmoji: persona.emoji,
+      onSave: (name, prompt, emoji) {
+        settings.updatePersona(persona.copyWith(
+          name: name,
+          systemPrompt: prompt,
+          emoji: emoji,
+        ));
+      },
+      onDelete: persona.id.startsWith('default-')
+          ? null
+          : () => settings.deletePersona(persona.id),
+    );
+  }
+
+  void _showPersonaDialog(
+    BuildContext context,
+    SettingsProvider settings, {
+    required String title,
+    String initialName = '',
+    String initialPrompt = '',
+    String initialEmoji = '🤖',
+    required void Function(String name, String prompt, String emoji) onSave,
+    VoidCallback? onDelete,
+  }) {
+    final nameController = TextEditingController(text: initialName);
+    final promptController = TextEditingController(text: initialPrompt);
+    final emojiController = TextEditingController(text: initialEmoji);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A1A2E),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: settings.accentColor.withOpacity(0.15),
+              ),
+              child: Center(
+                child: Text(initialEmoji, style: const TextStyle(fontSize: 18)),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontFamily: 'SpaceGrotesk',
+                fontWeight: FontWeight.w600,
+                fontSize: 17,
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildDialogField(
+              controller: nameController,
+              label: 'Name',
+              hint: 'e.g. Code Wizard',
+            ),
+            const SizedBox(height: 14),
+            _buildDialogField(
+              controller: promptController,
+              label: 'System Prompt',
+              hint: 'e.g. You are an expert...',
+              maxLines: 4,
+            ),
+            const SizedBox(height: 14),
+            _buildDialogField(
+              controller: emojiController,
+              label: 'Emoji',
+              hint: 'e.g. 🧙',
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        actions: [
+          if (onDelete != null)
+            TextButton(
+              onPressed: () {
+                Navigator.pop(ctx);
+                onDelete();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red.shade300,
+              ),
+              child: const Text('Delete'),
+            ),
+          const Spacer(),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.white.withOpacity(0.5),
+            ),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              if (nameController.text.trim().isNotEmpty &&
+                  promptController.text.trim().isNotEmpty) {
+                onSave(
+                  nameController.text.trim(),
+                  promptController.text.trim(),
+                  emojiController.text.trim().isNotEmpty
+                      ? emojiController.text.trim()
+                      : '🤖',
+                );
+                Navigator.pop(ctx);
+              }
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: settings.accentColor,
+            ),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDialogField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.5),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.3,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withOpacity(0.08)),
+          ),
+          child: TextField(
+            controller: controller,
+            maxLines: maxLines,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontFamily: 'Inter',
+            ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                color: Colors.white.withOpacity(0.2),
+                fontSize: 14,
+              ),
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 

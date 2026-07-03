@@ -4,5 +4,6 @@ abstract class AIService {
     required List<Map<String, String>> history,
     String webSearchContext = '',
     String? imageBase64,
+    String systemPrompt = '',
   });
 }

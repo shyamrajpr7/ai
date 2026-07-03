@@ -15,16 +15,19 @@ class OllamaService implements AIService {
     required List<Map<String, String>> history,
     String webSearchContext = '',
     String? imageBase64,
+    String systemPrompt = '',
   }) async* {
     final url = Uri.parse('$endpoint/chat/completions');
 
     final List<Map<String, Object>> apiMessages = [];
 
-    String systemPrompt = 'You are the Nexus AI assistant. You provide helpful, concise, and accurate responses.';
+    String effectivePrompt = systemPrompt.isNotEmpty
+        ? systemPrompt
+        : 'You are the Nexus AI assistant. You provide helpful, concise, and accurate responses.';
     if (webSearchContext.isNotEmpty) {
-      systemPrompt += '\n\nHere are web search results to help answer the user:\n$webSearchContext\n\nUse these search results to provide an informed answer. Cite sources where appropriate.';
+      effectivePrompt += '\n\nHere are web search results to help answer the user:\n$webSearchContext\n\nUse these search results to provide an informed answer. Cite sources where appropriate.';
     }
-    apiMessages.add({'role': 'system', 'content': systemPrompt});
+    apiMessages.add({'role': 'system', 'content': effectivePrompt});
 
     for (final h in history) {
       apiMessages.add({'role': h['role']!, 'content': h['content']!});
