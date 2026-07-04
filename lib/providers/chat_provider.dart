@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:uuid/uuid.dart';
 import '../models/chat_message.dart';
 import '../models/chat_conversation.dart';
+import '../models/diary_entry.dart';
 import '../services/ai_service.dart';
 import '../services/groq_service.dart';
 import '../services/ollama_service.dart';
@@ -139,7 +140,7 @@ class ChatProvider extends ChangeNotifier {
           .map((m) => {'role': m.role, 'content': m.content})
           .toList();
 
-      final aiService = _createAIService();
+      final aiService = createAIService();
       final systemPrompt = _settingsProvider.activePersona.systemPrompt;
       final fullResponse = StringBuffer();
 
@@ -341,7 +342,7 @@ class ChatProvider extends ChangeNotifier {
     await sendMessage(lastUserText ?? '', imageBase64: lastImage);
   }
 
-  AIService _createAIService() {
+  AIService createAIService() {
     if (_settingsProvider.backend == BackendType.groq) {
       final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
       if (apiKey.isEmpty || apiKey == 'your_groq_api_key_here') {
@@ -360,6 +361,98 @@ class ChatProvider extends ChangeNotifier {
         model: _settingsProvider.ollamaModel,
       );
     }
+  }
+
+  Future<DiaryEntry> generateDiaryEntry() async {
+    final today = DateTime.now();
+    final todayStart = DateTime(today.year, today.month, today.day);
+    final todayConvs = _conversations.where((c) {
+      return c.updatedAt.isAfter(todayStart) &&
+          c.messages.any((m) => m.role == 'user');
+    }).toList();
+
+    if (todayConvs.isEmpty) {
+      throw Exception('No conversations today to summarize');
+    }
+
+    final buffer = StringBuffer();
+    for (final conv in todayConvs) {
+      buffer.writeln('--- Conversation: ${conv.title} ---');
+      for (final m in conv.messages) {
+        final prefix = m.role == 'user' ? 'User' : 'AI';
+        final text = m.content.length > 200
+            ? '${m.content.substring(0, 197)}...'
+            : m.content;
+        buffer.writeln('$prefix: $text');
+      }
+      buffer.writeln();
+    }
+
+    final prompt = 'Summarize the following AI chat conversations from today. '
+        'Extract the key topics discussed, insights gained, and any decisions or action items. '
+        'Then list 2-5 key insights as a bullet list.\n\n'
+        'Format your response exactly like this:\n'
+        'SUMMARY: <2-3 sentence summary>\n'
+        'INSIGHTS:\n'
+        '- <insight 1>\n'
+        '- <insight 2>\n'
+        '...\n\n'
+        'Conversations:\n${buffer.toString()}';
+
+    final aiService = createAIService();
+    final fullResponse = StringBuffer();
+    await for (final chunk in aiService.streamResponse(
+      message: prompt,
+      history: [],
+      systemPrompt: 'You are a thoughtful journal writer. Summarize conversations concisely and insightfully.',
+    )) {
+      fullResponse.write(chunk);
+    }
+
+    final response = fullResponse.toString();
+    String summary = response;
+    final insights = <String>[];
+
+    if (response.contains('SUMMARY:')) {
+      final parts = response.split('INSIGHTS:');
+      summary = parts.first.replaceAll('SUMMARY:', '').trim();
+      if (parts.length > 1) {
+        for (final line in parts[1].split('\n')) {
+          final trimmed = line.trim();
+          if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
+            insights.add(trimmed.replaceFirst(RegExp(r'^[-•]\s*'), ''));
+          }
+        }
+      }
+    }
+
+    final entry = DiaryEntry(
+      id: _uuid.v4(),
+      date: today,
+      summary: summary,
+      keyInsights: insights,
+      conversationPreviews: todayConvs.map((c) => c.title).toList(),
+    );
+
+    final entries = _hiveService.loadDiaryEntries();
+    entries.removeWhere((e) =>
+        e.date.year == today.year &&
+        e.date.month == today.month &&
+        e.date.day == today.day);
+    entries.insert(0, entry);
+    await _hiveService.saveDiaryEntries(entries);
+
+    return entry;
+  }
+
+  List<DiaryEntry> get diaryEntries => _hiveService.loadDiaryEntries();
+
+  bool get hasTodayEntry {
+    final today = DateTime.now();
+    return diaryEntries.any((e) =>
+        e.date.year == today.year &&
+        e.date.month == today.month &&
+        e.date.day == today.day);
   }
 
   List<Map<String, dynamic>> searchMessages(String query) {
