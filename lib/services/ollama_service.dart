@@ -6,8 +6,9 @@ import 'ai_service.dart';
 class OllamaService implements AIService {
   final String endpoint;
   final String model;
+  final double temperature;
 
-  OllamaService({required this.endpoint, this.model = 'llama3.2'});
+  OllamaService({required this.endpoint, this.model = 'llama3.2', this.temperature = 0.6});
 
   @override
   Stream<String> streamResponse({
@@ -55,7 +56,7 @@ class OllamaService implements AIService {
         'model': model,
         'messages': apiMessages,
         'stream': true,
-        'temperature': 0.6,
+        'temperature': temperature,
       });
 
       final response = await client.send(request);

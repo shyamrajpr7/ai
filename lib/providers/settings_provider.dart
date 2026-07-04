@@ -16,6 +16,7 @@ class SettingsProvider extends ChangeNotifier {
   String _ollamaEndpoint = 'http://localhost:11434/v1';
   String _ollamaModel = 'llama3.2';
   String _claudeModel = 'claude-sonnet-4-20250514';
+  double _temperature = 0.6;
   bool _webSearchEnabled = false;
   bool _initialized = false;
   List<Persona> _personas = [];
@@ -27,6 +28,7 @@ class SettingsProvider extends ChangeNotifier {
   String get ollamaEndpoint => _ollamaEndpoint;
   String get ollamaModel => _ollamaModel;
   String get claudeModel => _claudeModel;
+  double get temperature => _temperature;
   bool get webSearchEnabled => _webSearchEnabled;
   bool get initialized => _initialized;
   List<Persona> get personas => _personas;
@@ -50,6 +52,7 @@ class SettingsProvider extends ChangeNotifier {
           data['ollamaEndpoint'] as String? ?? 'http://localhost:11434/v1';
       _ollamaModel = data['ollamaModel'] as String? ?? 'llama3.2';
       _claudeModel = data['claudeModel'] as String? ?? 'claude-sonnet-4-20250514';
+      _temperature = (data['temperature'] as num?)?.toDouble() ?? 0.6;
       _webSearchEnabled = data['webSearchEnabled'] as bool? ?? false;
       _activePersonaId = data['activePersonaId'] as String? ?? 'default-assistant';
       final personasRaw = data['personas'] as List<dynamic>?;
@@ -102,6 +105,12 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setTemperature(double value) async {
+    _temperature = value;
+    await _save();
+    notifyListeners();
+  }
+
   Future<void> setWebSearchEnabled(bool enabled) async {
     _webSearchEnabled = enabled;
     await _save();
@@ -146,6 +155,7 @@ class SettingsProvider extends ChangeNotifier {
       'ollamaEndpoint': _ollamaEndpoint,
       'ollamaModel': _ollamaModel,
       'claudeModel': _claudeModel,
+      'temperature': _temperature,
       'webSearchEnabled': _webSearchEnabled,
       'activePersonaId': _activePersonaId,
       'personas': _personas.map((p) => p.toJson()).toList(),

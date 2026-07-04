@@ -343,22 +343,24 @@ class ChatProvider extends ChangeNotifier {
   }
 
   AIService createAIService() {
+    final temp = _settingsProvider.temperature;
     if (_settingsProvider.backend == BackendType.groq) {
       final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
       if (apiKey.isEmpty || apiKey == 'your_groq_api_key_here') {
         throw Exception('Set your Groq API key in the .env file');
       }
-      return GroqService(apiKey: apiKey, model: _settingsProvider.groqModel);
+      return GroqService(apiKey: apiKey, model: _settingsProvider.groqModel, temperature: temp);
     } else if (_settingsProvider.backend == BackendType.claude) {
       final apiKey = dotenv.env['ANTHROPIC_API_KEY'] ?? '';
       if (apiKey.isEmpty) {
         throw Exception('Set your Anthropic API key in the .env file');
       }
-      return ClaudeService(apiKey: apiKey, model: _settingsProvider.claudeModel);
+      return ClaudeService(apiKey: apiKey, model: _settingsProvider.claudeModel, temperature: temp);
     } else {
       return OllamaService(
         endpoint: _settingsProvider.ollamaEndpoint,
         model: _settingsProvider.ollamaModel,
+        temperature: temp,
       );
     }
   }

@@ -6,8 +6,9 @@ import 'ai_service.dart';
 class ClaudeService implements AIService {
   final String apiKey;
   final String model;
+  final double temperature;
 
-  ClaudeService({required this.apiKey, this.model = 'claude-sonnet-4-20250514'});
+  ClaudeService({required this.apiKey, this.model = 'claude-sonnet-4-20250514', this.temperature = 0.6});
 
   @override
   Stream<String> streamResponse({
@@ -54,6 +55,7 @@ class ClaudeService implements AIService {
     final requestBody = <String, Object>{
       'model': model,
       'max_tokens': 4096,
+      'temperature': temperature,
       'stream': true,
       'messages': apiMessages,
     };

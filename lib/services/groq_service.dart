@@ -6,8 +6,9 @@ import 'ai_service.dart';
 class GroqService implements AIService {
   final String apiKey;
   final String model;
+  final double temperature;
 
-  GroqService({required this.apiKey, this.model = 'llama-3.1-8b-instant'});
+  GroqService({required this.apiKey, this.model = 'llama-3.1-8b-instant', this.temperature = 0.6});
 
   @override
   Stream<String> streamResponse({
@@ -61,7 +62,7 @@ class GroqService implements AIService {
       request.body = jsonEncode({
         'model': effectiveModel,
         'messages': apiMessages,
-        'temperature': 0.6,
+        'temperature': temperature,
         'stream': true,
       });
 

@@ -153,6 +153,8 @@ class SettingsScreen extends StatelessWidget {
                           ? _claudeFields(settings, accent)
                           : _ollamaFields(settings, accent),
                 ),
+                const SizedBox(height: 20),
+                _buildTemperatureSlider(settings, accent),
               ],
             ),
             const SizedBox(height: 14),
@@ -393,6 +395,64 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTemperatureSlider(SettingsProvider settings, Color accent) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel('Temperature'),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Icon(Icons.ac_unit, size: 14, color: Colors.white.withOpacity(0.2)),
+            Expanded(
+              child: SliderTheme(
+                data: SliderThemeData(
+                  trackHeight: 3,
+                  thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                  activeTrackColor: accent,
+                  inactiveTrackColor: Colors.white.withOpacity(0.08),
+                  thumbColor: accent,
+                  overlayColor: accent.withOpacity(0.1),
+                ),
+                child: Slider(
+                  value: settings.temperature,
+                  min: 0.0,
+                  max: 1.0,
+                  divisions: 20,
+                  onChanged: (v) => settings.setTemperature(v),
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 36,
+              child: Text(
+                settings.temperature.toStringAsFixed(1),
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.5),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'Inter',
+                ),
+                textAlign: TextAlign.right,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.whatshot, size: 14, color: Colors.white.withOpacity(0.3)),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Lower = precise, Higher = creative',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.25),
+            fontSize: 11,
+            fontFamily: 'Inter',
           ),
         ),
       ],
