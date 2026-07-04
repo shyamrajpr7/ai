@@ -6,6 +6,7 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:video_player/video_player.dart';
 import '../models/chat_message.dart';
+import '../services/tts_service.dart';
 import 'glow_text.dart';
 import 'code_block.dart';
 
@@ -124,6 +125,26 @@ class ChatBubble extends StatelessWidget {
                             color: Colors.white.withOpacity(0.15),
                           ),
                         ),
+                        if (!isUser && message.content.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          ListenableBuilder(
+                            listenable: TtsService.instance,
+                            builder: (context, _) {
+                              final playing = TtsService.instance.isSpeaking(message.id);
+                              return GestureDetector(
+                                onTap: () {
+                                  HapticFeedback.lightImpact();
+                                  TtsService.instance.toggle(message.id, message.content);
+                                },
+                                child: Icon(
+                                  playing ? Icons.volume_up_rounded : Icons.volume_up_outlined,
+                                  size: 12,
+                                  color: playing ? accent : Colors.white.withOpacity(0.15),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                         if (isUser) ...[
                           const SizedBox(width: 8),
                           GestureDetector(
@@ -186,6 +207,17 @@ class ChatBubble extends StatelessWidget {
                 HapticFeedback.lightImpact();
               },
             ),
+            if (!isUser && message.content.isNotEmpty) ...[
+              const Divider(color: Color(0xFF0A0A0F), height: 1),
+              _menuOption(
+                icon: Icons.volume_up_outlined,
+                label: 'Read Aloud',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  TtsService.instance.toggle(message.id, message.content);
+                },
+              ),
+            ],
             if (isUser) ...[
               const Divider(color: Color(0xFF0A0A0F), height: 1),
               _menuOption(
