@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../models/chat_conversation.dart';
 import '../providers/chat_provider.dart';
 import '../screens/diary_screen.dart';
+import '../screens/archaeology_screen.dart';
 
 class ChatHistoryDrawer extends StatelessWidget {
   final ChatProvider provider;
@@ -167,6 +168,47 @@ class ChatHistoryDrawer extends StatelessWidget {
               ),
               child: Column(
                 children: [
+                  ListTile(
+                    dense: true,
+                    leading: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accent.withOpacity(0.12),
+                      ),
+                      child: Icon(
+                        Icons.explore_outlined,
+                        size: 16,
+                        color: accent.withOpacity(0.7),
+                      ),
+                    ),
+                    title: Text(
+                      'Archaeology',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Activity heatmap',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.3),
+                        fontSize: 11,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ArchaeologyScreen(),
+                        ),
+                      );
+                    },
+                  ),
                   ListTile(
                     dense: true,
                     leading: Container(

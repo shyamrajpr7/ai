@@ -473,6 +473,25 @@ class ChatProvider extends ChangeNotifier {
     return results;
   }
 
+  Map<DateTime, int> getMessageCountsByDay() {
+    final counts = <DateTime, int>{};
+    for (final conv in _conversations) {
+      for (final msg in conv.messages) {
+        final day = DateTime(msg.timestamp.year, msg.timestamp.month, msg.timestamp.day);
+        counts[day] = (counts[day] ?? 0) + 1;
+      }
+    }
+    return counts;
+  }
+
+  List<ChatConversation> getConversationsForDate(DateTime date) {
+    final start = DateTime(date.year, date.month, date.day);
+    final end = start.add(const Duration(days: 1));
+    return _conversations.where((c) {
+      return c.updatedAt.isAfter(start) && c.updatedAt.isBefore(end);
+    }).toList();
+  }
+
   Future<void> _save() async {
     await _hiveService.saveConversations(_conversations);
   }
