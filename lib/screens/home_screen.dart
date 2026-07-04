@@ -731,6 +731,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     });
                   }
                 : null,
+            onDelete: () => provider.deleteMessage(msg.id),
           );
         } else {
           return ChatBubble(

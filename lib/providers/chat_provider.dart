@@ -296,6 +296,16 @@ class ChatProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> deleteMessage(String messageId) async {
+    if (_currentConversationId == null) return;
+    final convIdx = _conversations.indexWhere((c) => c.id == _currentConversationId);
+    if (convIdx == -1) return;
+    _conversations[convIdx].messages.removeWhere((m) => m.id == messageId);
+    _conversations[convIdx].updatedAt = DateTime.now();
+    await _save();
+    notifyListeners();
+  }
+
   Future<ChatMessage?> deleteMessageAndSubsequent(String messageId) async {
     if (_currentConversationId == null) return null;
     final convIdx =

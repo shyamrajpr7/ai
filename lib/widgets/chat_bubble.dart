@@ -16,6 +16,7 @@ class ChatBubble extends StatelessWidget {
   final bool isError;
   final VoidCallback? onRetry;
   final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   const ChatBubble({
     super.key,
@@ -24,6 +25,7 @@ class ChatBubble extends StatelessWidget {
     this.isError = false,
     this.onRetry,
     this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -229,6 +231,15 @@ class ChatBubble extends StatelessWidget {
                 },
               ),
             ],
+            const Divider(color: Color(0xFF0A0A0F), height: 1),
+            _menuOption(
+              icon: Icons.delete_outline_rounded,
+              label: 'Delete',
+              onTap: () {
+                Navigator.pop(ctx);
+                onDelete?.call();
+              },
+            ),
           ],
         ),
       ),
