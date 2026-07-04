@@ -8,6 +8,7 @@ import '../models/chat_conversation.dart';
 import '../services/ai_service.dart';
 import '../services/groq_service.dart';
 import '../services/ollama_service.dart';
+import '../services/claude_service.dart';
 import '../services/web_search_service.dart';
 import '../services/image_gen_service.dart';
 import '../services/video_gen_service.dart';
@@ -331,6 +332,12 @@ class ChatProvider extends ChangeNotifier {
         throw Exception('Set your Groq API key in the .env file');
       }
       return GroqService(apiKey: apiKey, model: _settingsProvider.groqModel);
+    } else if (_settingsProvider.backend == BackendType.claude) {
+      final apiKey = dotenv.env['ANTHROPIC_API_KEY'] ?? '';
+      if (apiKey.isEmpty) {
+        throw Exception('Set your Anthropic API key in the .env file');
+      }
+      return ClaudeService(apiKey: apiKey, model: _settingsProvider.claudeModel);
     } else {
       return OllamaService(
         endpoint: _settingsProvider.ollamaEndpoint,

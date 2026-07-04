@@ -149,7 +149,9 @@ class SettingsScreen extends StatelessWidget {
                   switchOutCurve: Curves.easeInCubic,
                   child: settings.backend == BackendType.groq
                       ? _groqFields(settings, accent)
-                      : _ollamaFields(settings, accent),
+                      : settings.backend == BackendType.claude
+                          ? _claudeFields(settings, accent)
+                          : _ollamaFields(settings, accent),
                 ),
               ],
             ),
@@ -347,6 +349,51 @@ class SettingsScreen extends StatelessWidget {
           hint: 'llama3.2',
           icon: Icons.smart_toy_outlined,
           onChanged: (v) => settings.setOllamaModel(v),
+        ),
+      ],
+    );
+  }
+
+  Widget _claudeFields(SettingsProvider settings, Color accent) {
+    return Column(
+      key: const ValueKey('claude'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel('Model'),
+        const SizedBox(height: 8),
+        _buildInputField(
+          initialValue: settings.claudeModel,
+          hint: 'claude-sonnet-4-20250514',
+          icon: Icons.smart_toy_outlined,
+          onChanged: (v) => settings.setClaudeModel(v),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: accent.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: accent.withOpacity(0.12),
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(Icons.info_outline, size: 16, color: accent.withOpacity(0.6)),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Set your Anthropic API key in the .env file.',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.45),
+                    fontSize: 13,
+                    height: 1.4,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -776,29 +823,40 @@ class SettingsScreen extends StatelessWidget {
       ),
       padding: const EdgeInsets.all(4),
       child: Row(
-        children: [
-          Expanded(
-            child: _toggleOption(
-              label: 'Groq Cloud',
-              subtitle: 'Fast API',
-              icon: Icons.bolt_outlined,
-              isSelected: settings.backend == BackendType.groq,
-              accent: accent,
-              onTap: () => settings.setBackend(BackendType.groq),
+          children: [
+            Expanded(
+              child: _toggleOption(
+                label: 'Groq Cloud',
+                subtitle: 'Fast API',
+                icon: Icons.bolt_outlined,
+                isSelected: settings.backend == BackendType.groq,
+                accent: accent,
+                onTap: () => settings.setBackend(BackendType.groq),
+              ),
             ),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: _toggleOption(
-              label: 'Ollama',
-              subtitle: 'Local',
-              icon: Icons.computer_outlined,
-              isSelected: settings.backend == BackendType.ollama,
-              accent: accent,
-              onTap: () => settings.setBackend(BackendType.ollama),
+            const SizedBox(width: 4),
+            Expanded(
+              child: _toggleOption(
+                label: 'Claude',
+                subtitle: 'Anthropic',
+                icon: Icons.psychology_outlined,
+                isSelected: settings.backend == BackendType.claude,
+                accent: accent,
+                onTap: () => settings.setBackend(BackendType.claude),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(width: 4),
+            Expanded(
+              child: _toggleOption(
+                label: 'Ollama',
+                subtitle: 'Local',
+                icon: Icons.computer_outlined,
+                isSelected: settings.backend == BackendType.ollama,
+                accent: accent,
+                onTap: () => settings.setBackend(BackendType.ollama),
+              ),
+            ),
+          ],
       ),
     );
   }

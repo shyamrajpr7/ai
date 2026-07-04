@@ -5,7 +5,7 @@ import '../services/hive_service.dart';
 
 const _uuid = Uuid();
 
-enum BackendType { groq, ollama }
+enum BackendType { groq, ollama, claude }
 
 class SettingsProvider extends ChangeNotifier {
   final HiveService _hiveService;
@@ -15,6 +15,7 @@ class SettingsProvider extends ChangeNotifier {
   String _groqModel = 'llama-3.1-8b-instant';
   String _ollamaEndpoint = 'http://localhost:11434/v1';
   String _ollamaModel = 'llama3.2';
+  String _claudeModel = 'claude-sonnet-4-20250514';
   bool _webSearchEnabled = false;
   bool _initialized = false;
   List<Persona> _personas = [];
@@ -25,6 +26,7 @@ class SettingsProvider extends ChangeNotifier {
   String get groqModel => _groqModel;
   String get ollamaEndpoint => _ollamaEndpoint;
   String get ollamaModel => _ollamaModel;
+  String get claudeModel => _claudeModel;
   bool get webSearchEnabled => _webSearchEnabled;
   bool get initialized => _initialized;
   List<Persona> get personas => _personas;
@@ -47,6 +49,7 @@ class SettingsProvider extends ChangeNotifier {
       _ollamaEndpoint =
           data['ollamaEndpoint'] as String? ?? 'http://localhost:11434/v1';
       _ollamaModel = data['ollamaModel'] as String? ?? 'llama3.2';
+      _claudeModel = data['claudeModel'] as String? ?? 'claude-sonnet-4-20250514';
       _webSearchEnabled = data['webSearchEnabled'] as bool? ?? false;
       _activePersonaId = data['activePersonaId'] as String? ?? 'default-assistant';
       final personasRaw = data['personas'] as List<dynamic>?;
@@ -89,6 +92,12 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> setOllamaModel(String model) async {
     _ollamaModel = model;
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> setClaudeModel(String model) async {
+    _claudeModel = model;
     await _save();
     notifyListeners();
   }
@@ -136,6 +145,7 @@ class SettingsProvider extends ChangeNotifier {
       'groqModel': _groqModel,
       'ollamaEndpoint': _ollamaEndpoint,
       'ollamaModel': _ollamaModel,
+      'claudeModel': _claudeModel,
       'webSearchEnabled': _webSearchEnabled,
       'activePersonaId': _activePersonaId,
       'personas': _personas.map((p) => p.toJson()).toList(),
