@@ -14,6 +14,7 @@ class ChatBubble extends StatelessWidget {
   final bool isStreaming;
   final bool isError;
   final VoidCallback? onRetry;
+  final VoidCallback? onEdit;
 
   const ChatBubble({
     super.key,
@@ -21,6 +22,7 @@ class ChatBubble extends StatelessWidget {
     this.isStreaming = false,
     this.isError = false,
     this.onRetry,
+    this.onEdit,
   });
 
   @override
@@ -48,47 +50,50 @@ class ChatBubble extends StatelessWidget {
               crossAxisAlignment:
                   isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.only(
-                      topLeft:
-                          Radius.circular(isUser ? 20 : 4),
-                      topRight:
-                          Radius.circular(isUser ? 4 : 20),
-                      bottomLeft: const Radius.circular(20),
-                      bottomRight: const Radius.circular(20),
-                    ),
-                    color: isUser
-                        ? accent.withOpacity(0.2)
-                        : Colors.white.withOpacity(0.06),
-                    border: Border.all(
-                      color: isUser
-                          ? accent.withOpacity(0.3)
-                          : Colors.white.withOpacity(0.08),
-                      width: 0.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isUser
-                            ? accent.withOpacity(0.08)
-                            : Colors.black.withOpacity(0.1),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+                GestureDetector(
+                  onLongPress: () => _showContextMenu(context, isUser),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.only(
+                        topLeft:
+                            Radius.circular(isUser ? 20 : 4),
+                        topRight:
+                            Radius.circular(isUser ? 4 : 20),
+                        bottomLeft: const Radius.circular(20),
+                        bottomRight: const Radius.circular(20),
                       ),
-                    ],
-                  ),
-                  child: _buildContent(context, isUser, accent),
-                )
-                    .animate()
-                    .fadeIn(
-                        duration: 300.ms,
-                        curve: Curves.easeOutCubic)
-                    .slideX(
-                        begin: isUser ? 0.15 : -0.15,
-                        end: 0,
-                        duration: 300.ms,
-                        curve: Curves.easeOutCubic),
+                      color: isUser
+                          ? accent.withOpacity(0.2)
+                          : Colors.white.withOpacity(0.06),
+                      border: Border.all(
+                        color: isUser
+                            ? accent.withOpacity(0.3)
+                            : Colors.white.withOpacity(0.08),
+                        width: 0.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: isUser
+                              ? accent.withOpacity(0.08)
+                              : Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: _buildContent(context, isUser, accent),
+                  )
+                      .animate()
+                      .fadeIn(
+                          duration: 300.ms,
+                          curve: Curves.easeOutCubic)
+                      .slideX(
+                          begin: isUser ? 0.15 : -0.15,
+                          end: 0,
+                          duration: 300.ms,
+                          curve: Curves.easeOutCubic),
+                ),
                 const SizedBox(height: 2),
                 if (!isStreaming && !isError)
                   Padding(
@@ -107,15 +112,24 @@ class ChatBubble extends StatelessWidget {
                             fontFamily: 'Inter',
                           ),
                         ),
-                        if (!isUser) ...[
+                        const SizedBox(width: 8),
+                        GestureDetector(
+                          onTap: () {
+                            Clipboard.setData(ClipboardData(text: message.content));
+                            HapticFeedback.lightImpact();
+                          },
+                          child: Icon(
+                            Icons.copy_rounded,
+                            size: 12,
+                            color: Colors.white.withOpacity(0.15),
+                          ),
+                        ),
+                        if (isUser) ...[
                           const SizedBox(width: 8),
                           GestureDetector(
-                            onTap: () {
-                              Clipboard.setData(ClipboardData(text: message.content));
-                              HapticFeedback.lightImpact();
-                            },
+                            onTap: () => onEdit?.call(),
                             child: Icon(
-                              Icons.copy_rounded,
+                              Icons.edit_rounded,
                               size: 12,
                               color: Colors.white.withOpacity(0.15),
                             ),
@@ -131,6 +145,87 @@ class ChatBubble extends StatelessWidget {
             _buildAvatar(accent, isUser),
           const SizedBox(width: 10),
         ],
+      ),
+    );
+  }
+
+  void _showContextMenu(BuildContext context, bool isUser) {
+    HapticFeedback.mediumImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF1A1A2E),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          border: Border(
+            top: BorderSide(color: Colors.white.withOpacity(0.06)),
+          ),
+        ),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(ctx).padding.bottom + 8,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 10),
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            _menuOption(
+              icon: Icons.copy_rounded,
+              label: 'Copy',
+              onTap: () {
+                Navigator.pop(ctx);
+                Clipboard.setData(ClipboardData(text: message.content));
+                HapticFeedback.lightImpact();
+              },
+            ),
+            if (isUser) ...[
+              const Divider(color: Color(0xFF0A0A0F), height: 1),
+              _menuOption(
+                icon: Icons.edit_rounded,
+                label: 'Edit',
+                onTap: () {
+                  Navigator.pop(ctx);
+                  onEdit?.call();
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _menuOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: Colors.white.withOpacity(0.6)),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.85),
+                fontSize: 15,
+                fontFamily: 'Inter',
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

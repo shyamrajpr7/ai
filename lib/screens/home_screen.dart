@@ -719,6 +719,18 @@ class _HomeScreenState extends State<HomeScreen> {
             message: msg,
             isError: isError,
             onRetry: isError ? () => provider.retryMessage() : null,
+            onEdit: msg.role == 'user'
+                ? () {
+                    provider.deleteMessageAndSubsequent(msg.id).then((m) {
+                      if (m != null) {
+                        _textController.text = m.content;
+                        if (m.imageBase64 != null) {
+                          setState(() => _pendingImageBase64 = m.imageBase64);
+                        }
+                      }
+                    });
+                  }
+                : null,
           );
         } else {
           return ChatBubble(
