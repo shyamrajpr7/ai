@@ -18,7 +18,6 @@ class GroqService implements AIService {
     String systemPrompt = '',
   }) async* {
     final url = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
-
     final List<Map<String, Object>> apiMessages = [];
 
     String effectivePrompt = systemPrompt.isNotEmpty
@@ -33,10 +32,11 @@ class GroqService implements AIService {
       apiMessages.add({'role': h['role']!, 'content': h['content']!});
     }
 
+    final effectiveModel = imageBase64 != null && !model.contains('vision')
+        ? 'llama-3.2-11b-vision-preview'
+        : model;
+
     if (imageBase64 != null) {
-      final visionModel = model.contains('vision')
-          ? model
-          : 'llama-3.2-11b-vision-preview';
       apiMessages.add({
         'role': 'user',
         'content': [
@@ -47,50 +47,48 @@ class GroqService implements AIService {
           },
         ],
       });
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Authorization': 'Bearer $apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': visionModel,
-          'messages': apiMessages,
-          'temperature': 0.6,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final content = data['choices'][0]['message']['content'] as String;
-        yield content;
-      } else {
-        throw Exception('Groq API error (${response.statusCode}): ${response.body}');
-      }
     } else {
       apiMessages.add({'role': 'user', 'content': message});
+    }
 
-      final response = await http.post(
-        url,
-        headers: {
-          'Authorization': 'Bearer $apiKey',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'model': model,
-          'messages': apiMessages,
-          'temperature': 0.6,
-        }),
-      );
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', url);
+      request.headers.addAll({
+        'Authorization': 'Bearer $apiKey',
+        'Content-Type': 'application/json',
+      });
+      request.body = jsonEncode({
+        'model': effectiveModel,
+        'messages': apiMessages,
+        'temperature': 0.6,
+        'stream': true,
+      });
+
+      final response = await client.send(request);
 
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final content = data['choices'][0]['message']['content'] as String;
-        yield content;
+        await for (final line in response.stream
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())) {
+          if (line.startsWith('data: ')) {
+            final data = line.substring(6);
+            if (data == '[DONE]') break;
+            try {
+              final json = jsonDecode(data);
+              final content = json['choices']?[0]?['delta']?['content'] as String?;
+              if (content != null && content.isNotEmpty) {
+                yield content;
+              }
+            } catch (_) {}
+          }
+        }
       } else {
-        throw Exception('Groq API error (${response.statusCode}): ${response.body}');
+        final body = await response.stream.bytesToString();
+        throw Exception('Groq API error (${response.statusCode}): $body');
       }
+    } finally {
+      client.close();
     }
   }
 }

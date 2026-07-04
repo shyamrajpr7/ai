@@ -18,7 +18,6 @@ class OllamaService implements AIService {
     String systemPrompt = '',
   }) async* {
     final url = Uri.parse('$endpoint/chat/completions');
-
     final List<Map<String, Object>> apiMessages = [];
 
     String effectivePrompt = systemPrompt.isNotEmpty
@@ -48,23 +47,41 @@ class OllamaService implements AIService {
       apiMessages.add({'role': 'user', 'content': message});
     }
 
-    final response = await http.post(
-      url,
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', url);
+      request.headers.addAll({'Content-Type': 'application/json'});
+      request.body = jsonEncode({
         'model': model,
         'messages': apiMessages,
-        'stream': false,
+        'stream': true,
         'temperature': 0.6,
-      }),
-    );
+      });
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final content = data['choices'][0]['message']['content'] as String;
-      yield content;
-    } else {
-      throw Exception('Ollama error (${response.statusCode}): ${response.body}');
+      final response = await client.send(request);
+
+      if (response.statusCode == 200) {
+        await for (final line in response.stream
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())) {
+          if (line.startsWith('data: ')) {
+            final data = line.substring(6);
+            if (data == '[DONE]') break;
+            try {
+              final json = jsonDecode(data);
+              final content = json['choices']?[0]?['delta']?['content'] as String?;
+              if (content != null && content.isNotEmpty) {
+                yield content;
+              }
+            } catch (_) {}
+          }
+        }
+      } else {
+        final body = await response.stream.bytesToString();
+        throw Exception('Ollama error (${response.statusCode}): $body');
+      }
+    } finally {
+      client.close();
     }
   }
 }

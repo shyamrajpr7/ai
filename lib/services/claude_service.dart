@@ -51,33 +51,55 @@ class ClaudeService implements AIService {
       apiMessages.add({'role': 'user', 'content': message});
     }
 
-    final body = <String, Object>{
+    final requestBody = <String, Object>{
       'model': model,
       'max_tokens': 4096,
+      'stream': true,
       'messages': apiMessages,
     };
     if (effectivePrompt.isNotEmpty) {
-      body['system'] = effectivePrompt;
+      requestBody['system'] = effectivePrompt;
     }
 
-    final response = await http.post(
-      url,
-      headers: {
+    final client = http.Client();
+    try {
+      final request = http.Request('POST', url);
+      request.headers.addAll({
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
         'content-type': 'application/json',
-      },
-      body: jsonEncode(body),
-    );
+      });
+      request.body = jsonEncode(requestBody);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      final content = data['content'] as List;
-      if (content.isNotEmpty && content[0]['type'] == 'text') {
-        yield content[0]['text'] as String;
+      final response = await client.send(request);
+
+      if (response.statusCode == 200) {
+        String? currentEvent;
+        await for (final line in response.stream
+            .transform(utf8.decoder)
+            .transform(const LineSplitter())) {
+          if (line.startsWith('event: ')) {
+            currentEvent = line.substring(7);
+          } else if (line.startsWith('data: ')) {
+            final data = line.substring(6);
+            if (currentEvent == 'content_block_delta') {
+              try {
+                final json = jsonDecode(data);
+                final text = json['delta']?['text'] as String?;
+                if (text != null && text.isNotEmpty) {
+                  yield text;
+                }
+              } catch (_) {}
+            }
+            currentEvent = null;
+          }
+        }
+      } else {
+        final body = await response.stream.bytesToString();
+        throw Exception('Claude API error (${response.statusCode}): $body');
       }
-    } else {
-      throw Exception('Claude API error (${response.statusCode}): ${response.body}');
+    } finally {
+      client.close();
     }
   }
 }
