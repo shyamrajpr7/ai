@@ -5,6 +5,7 @@ import '../models/chat_conversation.dart';
 import '../providers/chat_provider.dart';
 import '../screens/diary_screen.dart';
 import '../screens/archaeology_screen.dart';
+import '../screens/gallery_screen.dart';
 
 class ChatHistoryDrawer extends StatelessWidget {
   final ChatProvider provider;
@@ -239,6 +240,47 @@ class ChatHistoryDrawer extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const DiaryScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    dense: true,
+                    leading: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accent.withOpacity(0.12),
+                      ),
+                      child: Icon(
+                        Icons.auto_awesome,
+                        size: 16,
+                        color: accent.withOpacity(0.7),
+                      ),
+                    ),
+                    title: Text(
+                      'Dreamscape Gallery',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Browse dreamscape art',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.3),
+                        fontSize: 11,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const GalleryScreen(),
                         ),
                       );
                     },
