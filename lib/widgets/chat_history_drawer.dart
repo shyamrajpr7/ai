@@ -6,6 +6,7 @@ import '../providers/chat_provider.dart';
 import '../screens/diary_screen.dart';
 import '../screens/archaeology_screen.dart';
 import '../screens/gallery_screen.dart';
+import '../screens/arena_screen.dart';
 
 class ChatHistoryDrawer extends StatelessWidget {
   final ChatProvider provider;
@@ -281,6 +282,47 @@ class ChatHistoryDrawer extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const GalleryScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    dense: true,
+                    leading: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accent.withOpacity(0.12),
+                      ),
+                      child: Icon(
+                        Icons.sports_kabaddi,
+                        size: 16,
+                        color: accent.withOpacity(0.7),
+                      ),
+                    ),
+                    title: Text(
+                      'Arena',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Compare models side-by-side',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.3),
+                        fontSize: 11,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ArenaScreen(),
                         ),
                       );
                     },

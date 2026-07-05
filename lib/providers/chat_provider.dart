@@ -18,6 +18,34 @@ import 'settings_provider.dart';
 
 const _uuid = Uuid();
 
+class ArenaModelConfig {
+  final String id;
+  final String label;
+  bool enabled;
+
+  ArenaModelConfig({
+    required this.id,
+    required this.label,
+    this.enabled = true,
+  });
+}
+
+class ArenaResult {
+  final String modelId;
+  final String modelLabel;
+  String content;
+  bool isComplete;
+  String? error;
+
+  ArenaResult({
+    required this.modelId,
+    required this.modelLabel,
+    this.content = '',
+    this.isComplete = false,
+    this.error,
+  });
+}
+
 class ChatProvider extends ChangeNotifier {
   final HiveService _hiveService;
   final SettingsProvider _settingsProvider;
@@ -512,6 +540,111 @@ class ChatProvider extends ChangeNotifier {
     return _conversations.where((c) {
       return c.updatedAt.isAfter(start) && c.updatedAt.isBefore(end);
     }).toList();
+  }
+
+  // ── Arena ────────────────────────────────────────────
+
+  bool _arenaProcessing = false;
+  List<ArenaResult> _arenaResults = [];
+  List<ArenaModelConfig> _arenaModels = [];
+  String? _arenaPrompt;
+
+  bool get arenaProcessing => _arenaProcessing;
+  List<ArenaResult> get arenaResults => _arenaResults;
+  List<ArenaModelConfig> get arenaModels => _arenaModels;
+  String? get arenaPrompt => _arenaPrompt;
+
+  void initArena() {
+    _arenaModels = [
+      ArenaModelConfig(id: 'groq', label: 'Groq Cloud'),
+      ArenaModelConfig(id: 'claude', label: 'Claude'),
+      ArenaModelConfig(id: 'ollama', label: 'Ollama'),
+    ];
+    _arenaResults = [];
+    _arenaPrompt = null;
+    _arenaProcessing = false;
+    notifyListeners();
+  }
+
+  void toggleArenaModel(String id) {
+    final idx = _arenaModels.indexWhere((m) => m.id == id);
+    if (idx == -1) return;
+    final enabledCount = _arenaModels.where((m) => m.enabled).length;
+    if (_arenaModels[idx].enabled && enabledCount <= 2) return;
+    _arenaModels[idx].enabled = !_arenaModels[idx].enabled;
+    notifyListeners();
+  }
+
+  AIService _createServiceForModel(String modelId) {
+    final temp = _settingsProvider.temperature;
+    switch (modelId) {
+      case 'groq':
+        final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
+        if (apiKey.isEmpty || apiKey == 'your_groq_api_key_here') {
+          throw Exception('Set your Groq API key in the .env file');
+        }
+        return GroqService(apiKey: apiKey, model: _settingsProvider.groqModel, temperature: temp);
+      case 'claude':
+        final apiKey = dotenv.env['ANTHROPIC_API_KEY'] ?? '';
+        if (apiKey.isEmpty) {
+          throw Exception('Set your Anthropic API key in the .env file');
+        }
+        return ClaudeService(apiKey: apiKey, model: _settingsProvider.claudeModel, temperature: temp);
+      case 'ollama':
+        return OllamaService(
+          endpoint: _settingsProvider.ollamaEndpoint,
+          model: _settingsProvider.ollamaModel,
+          temperature: temp,
+        );
+      default:
+        throw Exception('Unknown model: $modelId');
+    }
+  }
+
+  Future<void> runArena(String prompt) async {
+    if (prompt.trim().isEmpty || _arenaProcessing) return;
+
+    _arenaPrompt = prompt;
+    _arenaProcessing = true;
+    _arenaResults = _arenaModels
+        .where((m) => m.enabled)
+        .map((m) => ArenaResult(modelId: m.id, modelLabel: m.label))
+        .toList();
+    notifyListeners();
+
+    final systemPrompt = _settingsProvider.activePersona.systemPrompt;
+
+    await Future.wait(_arenaResults.map((result) async {
+      try {
+        final service = _createServiceForModel(result.modelId);
+        final buffer = StringBuffer();
+        await for (final chunk in service.streamResponse(
+          message: prompt,
+          history: [],
+          systemPrompt: systemPrompt,
+        )) {
+          buffer.write(chunk);
+          result.content = buffer.toString();
+          notifyListeners();
+        }
+        result.isComplete = true;
+        notifyListeners();
+      } catch (e) {
+        result.error = e.toString().replaceAll('Exception: ', '');
+        result.isComplete = true;
+        notifyListeners();
+      }
+    }));
+
+    _arenaProcessing = false;
+    notifyListeners();
+  }
+
+  void clearArena() {
+    _arenaResults = [];
+    _arenaPrompt = null;
+    _arenaProcessing = false;
+    notifyListeners();
   }
 
   Future<void> _save() async {
