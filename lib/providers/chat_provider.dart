@@ -36,6 +36,9 @@ class ArenaResult {
   String content;
   bool isComplete;
   String? error;
+  DateTime? startTime;
+  DateTime? firstTokenTime;
+  DateTime? endTime;
 
   ArenaResult({
     required this.modelId,
@@ -43,7 +46,25 @@ class ArenaResult {
     this.content = '',
     this.isComplete = false,
     this.error,
+    this.startTime,
+    this.firstTokenTime,
+    this.endTime,
   });
+
+  Duration? get elapsed {
+    if (startTime == null || endTime == null) return null;
+    return endTime!.difference(startTime!);
+  }
+
+  double? get charsPerSecond {
+    if (elapsed == null || elapsed!.inSeconds == 0) return null;
+    return content.length / elapsed!.inMilliseconds * 1000;
+  }
+
+  Duration? get firstTokenLatency {
+    if (startTime == null || firstTokenTime == null) return null;
+    return firstTokenTime!.difference(startTime!);
+  }
 }
 
 class ChatProvider extends ChangeNotifier {
@@ -606,9 +627,14 @@ class ChatProvider extends ChangeNotifier {
 
     _arenaPrompt = prompt;
     _arenaProcessing = true;
+    final now = DateTime.now();
     _arenaResults = _arenaModels
         .where((m) => m.enabled)
-        .map((m) => ArenaResult(modelId: m.id, modelLabel: m.label))
+        .map((m) => ArenaResult(
+          modelId: m.id,
+          modelLabel: m.label,
+          startTime: now,
+        ))
         .toList();
     notifyListeners();
 
@@ -618,20 +644,27 @@ class ChatProvider extends ChangeNotifier {
       try {
         final service = _createServiceForModel(result.modelId);
         final buffer = StringBuffer();
+        var isFirstChunk = true;
         await for (final chunk in service.streamResponse(
           message: prompt,
           history: [],
           systemPrompt: systemPrompt,
         )) {
+          if (isFirstChunk) {
+            isFirstChunk = false;
+            result.firstTokenTime = DateTime.now();
+          }
           buffer.write(chunk);
           result.content = buffer.toString();
           notifyListeners();
         }
         result.isComplete = true;
+        result.endTime = DateTime.now();
         notifyListeners();
       } catch (e) {
         result.error = e.toString().replaceAll('Exception: ', '');
         result.isComplete = true;
+        result.endTime = DateTime.now();
         notifyListeners();
       }
     }));

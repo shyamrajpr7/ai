@@ -125,6 +125,8 @@ class _ArenaScreenState extends State<ArenaScreen> {
     );
   }
 
+  // ── Model Toggles ─────────────────────────────────────
+
   Widget _buildModelToggles(Color accent, ChatProvider provider) {
     final models = provider.arenaModels;
     if (models.isEmpty) return const SizedBox.shrink();
@@ -228,6 +230,8 @@ class _ArenaScreenState extends State<ArenaScreen> {
     }
   }
 
+  // ── Idle State ────────────────────────────────────────
+
   Widget _buildIdleState(Color accent) {
     return Center(
       child: Column(
@@ -271,17 +275,25 @@ class _ArenaScreenState extends State<ArenaScreen> {
     );
   }
 
+  // ── Results ───────────────────────────────────────────
+
   Widget _buildResults(Color accent, ChatProvider provider) {
     final results = provider.arenaResults;
+    final allDone = results.isNotEmpty && results.every((r) => r.isComplete);
 
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      itemCount: results.length + (provider.arenaProcessing ? 0 : 0),
+      itemCount: results.length + (allDone ? 1 : 0),
       itemBuilder: (context, index) {
-        if (index < results.length) {
+        if (allDone && index == 0) {
+          return _buildSpeedSummary(results, accent);
+        }
+        final resultIdx = allDone ? index - 1 : index;
+        if (resultIdx < results.length) {
           return _ArenaResultCard(
-            result: results[index],
+            result: results[resultIdx],
+            allResults: results,
             accent: accent,
           );
         }
@@ -289,6 +301,136 @@ class _ArenaScreenState extends State<ArenaScreen> {
       },
     );
   }
+
+  Widget _buildSpeedSummary(List<ArenaResult> results, Color accent) {
+    final completed = results.where((r) => r.elapsed != null).toList();
+    if (completed.length < 2) return const SizedBox.shrink();
+
+    completed.sort((a, b) => (a.elapsed!.inMilliseconds).compareTo(b.elapsed!.inMilliseconds));
+    final fastest = completed.first;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.03),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.08),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 28, height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: accent.withOpacity(0.15),
+                ),
+                child: Icon(Icons.speed, size: 16, color: accent),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Speed Rankings',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'SpaceGrotesk',
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ...completed.asMap().entries.map((entry) {
+            final rank = entry.key;
+            final r = entry.value;
+            final isFastest = r.modelId == fastest.modelId;
+            final pct = fastest.elapsed!.inMilliseconds > 0
+                ? (fastest.elapsed!.inMilliseconds / r.elapsed!.inMilliseconds * 100)
+                : 0.0;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 22,
+                    child: Text(
+                      _rankEmoji(rank),
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  _modelIcon(r.modelId, true, accent),
+                  const SizedBox(width: 6),
+                  SizedBox(
+                    width: 70,
+                    child: Text(
+                      r.modelLabel,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.8),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        fontFamily: 'Inter',
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: Container(
+                            height: 6,
+                            child: LinearProgressIndicator(
+                              value: pct / 100,
+                              backgroundColor: Colors.white.withOpacity(0.05),
+                              valueColor: AlwaysStoppedAnimation(
+                                isFastest
+                                    ? _modelColor(r.modelId)
+                                    : _modelColor(r.modelId).withOpacity(0.5),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    _formatDuration(r.elapsed!),
+                    style: TextStyle(
+                      color: isFastest
+                          ? _modelColor(r.modelId)
+                          : Colors.white.withOpacity(0.4),
+                      fontSize: 11,
+                      fontWeight: isFastest ? FontWeight.w600 : FontWeight.w400,
+                      fontFamily: 'Inter',
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  String _rankEmoji(int rank) {
+    switch (rank) {
+      case 0: return '🏆';
+      case 1: return '🥈';
+      case 2: return '🥉';
+      default: return '$rank.';
+    }
+  }
+
+  // ── Input Bar ─────────────────────────────────────────
 
   Widget _buildInputBar(Color accent, ChatProvider provider) {
     return Container(
@@ -411,20 +553,45 @@ class _ArenaScreenState extends State<ArenaScreen> {
   }
 }
 
+// ── Result Card ─────────────────────────────────────────
+
+const _speedEmojis = ['🏆', '🥈', '🥉'];
+
 class _ArenaResultCard extends StatelessWidget {
   final ArenaResult result;
+  final List<ArenaResult> allResults;
   final Color accent;
 
   const _ArenaResultCard({
     required this.result,
+    required this.allResults,
     required this.accent,
   });
+
+  int get _speedRank {
+    final withTime = allResults
+        .where((r) => r.elapsed != null && r.error == null)
+        .toList()
+      ..sort((a, b) => a.elapsed!.inMilliseconds.compareTo(b.elapsed!.inMilliseconds));
+    final idx = withTime.indexWhere((r) => r.modelId == result.modelId);
+    return idx;
+  }
+
+  double get _relativeCps {
+    if (result.charsPerSecond == null) return 0;
+    final maxCps = allResults
+        .where((r) => r.charsPerSecond != null && r.error == null)
+        .fold<double>(0, (max, r) => r.charsPerSecond! > max ? r.charsPerSecond! : max);
+    if (maxCps == 0) return 0;
+    return result.charsPerSecond! / maxCps;
+  }
 
   @override
   Widget build(BuildContext context) {
     final isError = result.error != null;
     final isComplete = result.isComplete;
     final hasContent = result.content.isNotEmpty;
+    final rank = _speedRank;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
@@ -434,7 +601,7 @@ class _ArenaResultCard extends StatelessWidget {
         border: Border.all(
           color: isError
               ? Colors.red.withOpacity(0.2)
-              : isComplete
+              : isComplete && result.error == null
                   ? _modelColor(result.modelId).withOpacity(0.15)
                   : Colors.white.withOpacity(0.06),
         ),
@@ -442,19 +609,22 @@ class _ArenaResultCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
+          _buildHeader(rank),
+          _buildSpeedBar(rank),
           if (isError)
             _buildError()
           else if (!hasContent && !isComplete)
             _buildLoading()
           else
             _buildContent(),
+          if (!isError && isComplete && hasContent)
+            _buildStats(),
         ],
       ),
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(int rank) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
@@ -475,42 +645,135 @@ class _ArenaResultCard extends StatelessWidget {
               fontFamily: 'SpaceGrotesk',
             ),
           ),
+          if (result.isComplete && result.error == null && rank >= 0 && rank < 3) ...[
+            const SizedBox(width: 6),
+            Text(
+              _speedEmojis[rank],
+              style: const TextStyle(fontSize: 14),
+            ),
+          ],
           const Spacer(),
-          if (result.isComplete && result.error == null)
-            Container(
-              width: 20, height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _modelColor(result.modelId).withOpacity(0.2),
-              ),
-              child: Icon(
-                Icons.check,
-                size: 12,
-                color: _modelColor(result.modelId),
-              ),
-            ),
-          if (result.error != null)
-            Container(
-              width: 20, height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.red.withOpacity(0.2),
-              ),
-              child: Icon(
-                Icons.close,
-                size: 12,
-                color: Colors.red.shade300,
-              ),
-            ),
-          if (!result.isComplete)
-            SizedBox(
-              width: 14, height: 14,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: _modelColor(result.modelId).withOpacity(0.5),
-              ),
-            ),
+          _buildStatusIndicator(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStatusIndicator() {
+    if (result.error != null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.red.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          'Error',
+          style: TextStyle(
+            color: Colors.red.shade300,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    if (!result.isComplete) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: _modelColor(result.modelId).withOpacity(0.12),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 10, height: 10,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                color: _modelColor(result.modelId).withOpacity(0.6),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              'Streaming',
+              style: TextStyle(
+                color: _modelColor(result.modelId).withOpacity(0.7),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (result.elapsed != null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: _modelColor(result.modelId).withOpacity(0.12),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.timer_outlined, size: 11, color: _modelColor(result.modelId).withOpacity(0.7)),
+            const SizedBox(width: 3),
+            Text(
+              _formatDuration(result.elapsed!),
+              style: TextStyle(
+                color: _modelColor(result.modelId).withOpacity(0.8),
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'Inter',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      width: 20, height: 20,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: _modelColor(result.modelId).withOpacity(0.2),
+      ),
+      child: Icon(Icons.check, size: 12, color: _modelColor(result.modelId)),
+    );
+  }
+
+  Widget _buildSpeedBar(int rank) {
+    if (!result.isComplete || result.error != null) return const SizedBox.shrink();
+
+    final cps = result.charsPerSecond;
+    if (cps == null) return const SizedBox.shrink();
+
+    final rel = _relativeCps;
+    final isFastest = rank == 0;
+
+    return Container(
+      height: 3,
+      child: FractionallySizedBox(
+        alignment: Alignment.centerLeft,
+        widthFactor: rel > 0.01 ? rel : 0.01,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.only(
+              bottomRight: Radius.circular(3),
+            ),
+            gradient: LinearGradient(
+              colors: [
+                _modelColor(result.modelId).withOpacity(0.3),
+                isFastest
+                    ? _modelColor(result.modelId).withOpacity(0.9)
+                    : _modelColor(result.modelId).withOpacity(0.5),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -630,6 +893,74 @@ class _ArenaResultCard extends StatelessWidget {
     );
   }
 
+  Widget _buildStats() {
+    final cps = result.charsPerSecond;
+    final latency = result.firstTokenLatency;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 10),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: Colors.white.withOpacity(0.04)),
+        ),
+      ),
+      child: Row(
+        children: [
+          _statChip(
+            Icons.timer_outlined,
+            _formatDuration(result.elapsed!),
+            'elapsed',
+            _modelColor(result.modelId),
+          ),
+          const SizedBox(width: 12),
+          if (cps != null)
+            _statChip(
+              Icons.speed,
+              '${cps.toStringAsFixed(0)} c/s',
+              'throughput',
+              _modelColor(result.modelId),
+            ),
+          if (cps != null) const SizedBox(width: 12),
+          if (latency != null)
+            _statChip(
+              Icons.flash_on_outlined,
+              _formatDuration(latency),
+              'first token',
+              _modelColor(result.modelId),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _statChip(IconData icon, String value, String label, Color color) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 11, color: color.withOpacity(0.5)),
+        const SizedBox(width: 4),
+        Text(
+          value,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            fontFamily: 'Inter',
+          ),
+        ),
+        const SizedBox(width: 2),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.2),
+            fontSize: 10,
+            fontFamily: 'Inter',
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _modelIcon(String id, bool enabled, Color accent) {
     final color = enabled ? _modelColor(id) : Colors.white.withOpacity(0.2);
     switch (id) {
@@ -652,4 +983,19 @@ class _ArenaResultCard extends StatelessWidget {
       default: return const Color(0xFF7C4DFF);
     }
   }
+}
+
+// ── Helpers ─────────────────────────────────────────────
+
+String _formatDuration(Duration d) {
+  if (d.inMilliseconds < 1000) {
+    return '${d.inMilliseconds}ms';
+  }
+  if (d.inSeconds < 60) {
+    final ms = d.inMilliseconds % 1000;
+    return '${d.inSeconds}.${(ms ~/ 100)}s';
+  }
+  final secs = d.inSeconds % 60;
+  final mins = d.inMinutes;
+  return '${mins}m ${secs}s';
 }
