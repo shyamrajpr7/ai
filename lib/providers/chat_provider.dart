@@ -402,13 +402,16 @@ class ChatProvider extends ChangeNotifier {
 
     final prompt = 'Summarize the following AI chat conversations from today. '
         'Extract the key topics discussed, insights gained, and any decisions or action items. '
-        'Then list 2-5 key insights as a bullet list.\n\n'
+        'Then list 2-5 key insights as a bullet list. '
+        'Finally, generate a single vivid DREAMSCAPE_PROMPT — a detailed image generation prompt '
+        'that visually represents the mood and themes of today\'s conversations.\n\n'
         'Format your response exactly like this:\n'
         'SUMMARY: <2-3 sentence summary>\n'
         'INSIGHTS:\n'
         '- <insight 1>\n'
         '- <insight 2>\n'
-        '...\n\n'
+        '...\n'
+        'DREAMSCAPE_PROMPT: <vivid image prompt>\n\n'
         'Conversations:\n${buffer.toString()}';
 
     final aiService = createAIService();
@@ -424,9 +427,12 @@ class ChatProvider extends ChangeNotifier {
     final response = fullResponse.toString();
     String summary = response;
     final insights = <String>[];
+    String? dreamscapePrompt;
 
     if (response.contains('SUMMARY:')) {
-      final parts = response.split('INSIGHTS:');
+      final withDreamscape = response.split('DREAMSCAPE_PROMPT:');
+      final beforeDreamscape = withDreamscape.first;
+      final parts = beforeDreamscape.split('INSIGHTS:');
       summary = parts.first.replaceAll('SUMMARY:', '').trim();
       if (parts.length > 1) {
         for (final line in parts[1].split('\n')) {
@@ -436,6 +442,9 @@ class ChatProvider extends ChangeNotifier {
           }
         }
       }
+      if (withDreamscape.length > 1) {
+        dreamscapePrompt = withDreamscape.sublist(1).join('DREAMSCAPE_PROMPT:').trim();
+      }
     }
 
     final entry = DiaryEntry(
@@ -443,6 +452,7 @@ class ChatProvider extends ChangeNotifier {
       date: today,
       summary: summary,
       keyInsights: insights,
+      dreamscapePrompt: dreamscapePrompt,
       conversationPreviews: todayConvs.map((c) => c.title).toList(),
     );
 
