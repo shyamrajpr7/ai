@@ -6,6 +6,8 @@ import '../models/diary_entry.dart';
 import '../providers/chat_provider.dart';
 import '../providers/settings_provider.dart';
 import '../widgets/gradient_mesh_background.dart';
+import '../providers/canvas_provider.dart';
+import 'dream_canvas_screen.dart';
 
 class GalleryScreen extends StatefulWidget {
   const GalleryScreen({super.key});
@@ -306,6 +308,23 @@ class _FullScreenViewerState extends State<_FullScreenViewer> {
     super.dispose();
   }
 
+  void _sendToCanvas(DiaryEntry entry) {
+    if (entry.imageBase64 == null) return;
+    final canvasProvider = context.read<CanvasProvider>();
+    if (canvasProvider.activeProject == null) {
+      canvasProvider.createProject(title: 'Dream Canvas');
+    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DreamCanvasScreen(
+          initialImageBase64: entry.imageBase64,
+          initialPrompt: entry.summary,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -338,6 +357,14 @@ class _FullScreenViewerState extends State<_FullScreenViewer> {
           ),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.dashboard_customize_outlined,
+                color: widget.accent),
+            onPressed: () => _sendToCanvas(widget.entries[_currentPage]),
+            tooltip: 'Send to Dream Canvas',
+          ),
+        ],
       ),
       body: PageView.builder(
         controller: _pageController,

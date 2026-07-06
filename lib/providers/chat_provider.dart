@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:uuid/uuid.dart';
 import '../models/chat_message.dart';
 import '../models/chat_conversation.dart';
+import '../models/conversation_branch.dart';
 import '../models/diary_entry.dart';
 import '../models/memory_node.dart';
 import '../models/persona.dart';
@@ -107,6 +108,8 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> createConversation() async {
     final conv = ChatConversation(id: _uuid.v4());
+    conv.branches = [ConversationBranch(id: 'main', name: 'Original')];
+    conv.activeBranchId = 'main';
     _conversations.insert(0, conv);
     _currentConversationId = conv.id;
     _currentResponse = '';
@@ -163,6 +166,7 @@ class ChatProvider extends ChangeNotifier {
       imageBase64: imageBase64,
     );
     conv.messages.add(userMsg);
+    _syncBranchMessages(conv);
     conv.updatedAt = DateTime.now();
 
     _isProcessing = true;
@@ -222,6 +226,7 @@ class ChatProvider extends ChangeNotifier {
           timestamp: DateTime.now(),
         );
         conv.messages.add(assistantMsg);
+        _syncBranchMessages(conv);
 
         if (conv.title == 'New Chat' && conv.messages.length >= 2) {
           conv.title =
@@ -238,6 +243,93 @@ class ChatProvider extends ChangeNotifier {
       _errorMessage = 'Failed to get response. Tap to retry.';
       notifyListeners();
     }
+  }
+
+  /// Branch the conversation from a historical message — replaces
+  /// [deleteMessageAndSubsequent] with a version-preserving branch.
+  Future<ChatMessage?> editMessageAndBranch(String messageId) async {
+    if (_currentConversationId == null) return null;
+    final convIdx =
+        _conversations.indexWhere((c) => c.id == _currentConversationId);
+    if (convIdx == -1) return null;
+    final conv = _conversations[convIdx];
+    final idx = conv.messages.indexWhere((m) => m.id == messageId);
+    if (idx == -1) return null;
+    final target = conv.messages[idx];
+
+    final branchId = _uuid.v4();
+    final branchName = 'Branch ${conv.branches.length + 1}';
+
+    final branchMsgs = conv.messages.sublist(0, idx + 1);
+    conv.branchMessages[branchId] = branchMsgs;
+    conv.branches.add(ConversationBranch(id: branchId, name: branchName));
+    conv.activeBranchId = branchId;
+    conv.messages
+      ..clear()
+      ..addAll(branchMsgs);
+    _syncBranchMessages(conv);
+    conv.updatedAt = DateTime.now();
+    await _save();
+    notifyListeners();
+    return target;
+  }
+
+  void switchBranch(String branchId) {
+    if (_currentConversationId == null) return;
+    final convIdx =
+        _conversations.indexWhere((c) => c.id == _currentConversationId);
+    if (convIdx == -1) return;
+    final conv = _conversations[convIdx];
+    final branchMsgs = conv.branchMessages[branchId];
+    if (branchMsgs == null) return;
+
+    conv.activeBranchId = branchId;
+    conv.messages
+      ..clear()
+      ..addAll(branchMsgs);
+    conv.updatedAt = DateTime.now();
+    notifyListeners();
+  }
+
+  void renameBranch(String branchId, String name) {
+    if (_currentConversationId == null) return;
+    final convIdx =
+        _conversations.indexWhere((c) => c.id == _currentConversationId);
+    if (convIdx == -1) return;
+    final conv = _conversations[convIdx];
+    final branch = conv.branches.where((b) => b.id == branchId).firstOrNull;
+    if (branch == null) return;
+    branch.name = name;
+    notifyListeners();
+  }
+
+  void deleteBranch(String branchId) {
+    if (_currentConversationId == null) return;
+    final convIdx =
+        _conversations.indexWhere((c) => c.id == _currentConversationId);
+    if (convIdx == -1) return;
+    final conv = _conversations[convIdx];
+    if (conv.branches.length <= 1) return;
+
+    conv.branches.removeWhere((b) => b.id == branchId);
+    conv.branchMessages.remove(branchId);
+
+    if (conv.activeBranchId == branchId) {
+      final first = conv.branches.first;
+      conv.activeBranchId = first.id;
+      final msgs = conv.branchMessages[first.id];
+      if (msgs != null) {
+        conv.messages
+          ..clear()
+          ..addAll(msgs);
+      }
+    }
+    conv.updatedAt = DateTime.now();
+    notifyListeners();
+  }
+
+  void _syncBranchMessages(ChatConversation conv) {
+    conv.branchMessages[conv.activeBranchId] = List.from(conv.messages);
   }
 
   Future<void> generateImage(String prompt) async {
@@ -260,6 +352,7 @@ class ChatProvider extends ChangeNotifier {
       timestamp: DateTime.now(),
     );
     conv.messages.add(userMsg);
+    _syncBranchMessages(conv);
     conv.updatedAt = DateTime.now();
 
     _isProcessing = true;
@@ -279,6 +372,7 @@ class ChatProvider extends ChangeNotifier {
         imageBase64: imageBase64,
       );
       conv.messages.add(assistantMsg);
+      _syncBranchMessages(conv);
 
       if (conv.title == 'New Chat' && conv.messages.length >= 2) {
         conv.title =
@@ -316,6 +410,7 @@ class ChatProvider extends ChangeNotifier {
       timestamp: DateTime.now(),
     );
     conv.messages.add(userMsg);
+    _syncBranchMessages(conv);
     conv.updatedAt = DateTime.now();
 
     _isProcessing = true;
@@ -336,6 +431,7 @@ class ChatProvider extends ChangeNotifier {
         videoPath: videoPath,
       );
       conv.messages.add(assistantMsg);
+      _syncBranchMessages(conv);
 
       if (conv.title == 'New Chat' && conv.messages.length >= 2) {
         conv.title =
@@ -357,8 +453,10 @@ class ChatProvider extends ChangeNotifier {
     if (_currentConversationId == null) return;
     final convIdx = _conversations.indexWhere((c) => c.id == _currentConversationId);
     if (convIdx == -1) return;
-    _conversations[convIdx].messages.removeWhere((m) => m.id == messageId);
-    _conversations[convIdx].updatedAt = DateTime.now();
+    final conv = _conversations[convIdx];
+    conv.messages.removeWhere((m) => m.id == messageId);
+    _syncBranchMessages(conv);
+    conv.updatedAt = DateTime.now();
     await _save();
     notifyListeners();
   }
@@ -373,6 +471,7 @@ class ChatProvider extends ChangeNotifier {
     if (idx == -1) return null;
     final target = conv.messages[idx];
     conv.messages.removeRange(idx, conv.messages.length);
+    _syncBranchMessages(conv);
     conv.updatedAt = DateTime.now();
     await _save();
     notifyListeners();
@@ -400,6 +499,8 @@ class ChatProvider extends ChangeNotifier {
       lastImage = conv.messages[lastUserIdx].imageBase64;
       conv.messages.removeAt(lastUserIdx);
     }
+
+    _syncBranchMessages(conv);
 
     if (lastUserText == null && lastImage == null) return;
 

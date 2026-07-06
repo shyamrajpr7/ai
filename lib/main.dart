@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'services/hive_service.dart';
 import 'providers/chat_provider.dart';
 import 'providers/settings_provider.dart';
+import 'providers/canvas_provider.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -20,11 +21,15 @@ void main() async {
   final chatProvider = ChatProvider(hiveService, settingsProvider);
   await chatProvider.load();
 
+  final canvasProvider = CanvasProvider(hiveService);
+  await canvasProvider.load();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: settingsProvider),
         ChangeNotifierProvider.value(value: chatProvider),
+        ChangeNotifierProvider.value(value: canvasProvider),
       ],
       child: const NexusApp(),
     ),

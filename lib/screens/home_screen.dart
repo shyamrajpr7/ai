@@ -12,6 +12,7 @@ import '../widgets/glass_input_bar.dart';
 import '../widgets/chat_history_drawer.dart';
 import '../models/chat_message.dart';
 import 'settings_screen.dart';
+import 'time_machine_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -335,6 +336,99 @@ class _HomeScreenState extends State<HomeScreen> {
     _scrollToBottom();
   }
 
+  String _getActiveBranchName(ChatProvider provider) {
+    final conv = provider.currentConversation;
+    if (conv == null) return '';
+    final branch = conv.branches.where((b) => b.id == conv.activeBranchId).firstOrNull;
+    return branch?.name ?? 'Original';
+  }
+
+  void _showBranchIndicator(BuildContext buildContext, ChatProvider provider) {
+    final accent = context.read<SettingsProvider>().accentColor;
+    final conv = provider.currentConversation;
+    if (conv == null) return;
+
+    showModalBottomSheet(
+      context: buildContext,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0A0A0F),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border(
+            top: BorderSide(color: accent.withOpacity(0.2)),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Conversation Branches',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontFamily: 'SpaceGrotesk',
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...conv.branches.map((b) => ListTile(
+              leading: Icon(
+                b.id == conv.activeBranchId
+                    ? Icons.call_split_rounded
+                    : Icons.subdirectory_arrow_right_rounded,
+                color: b.id == conv.activeBranchId
+                    ? accent
+                    : Colors.white.withOpacity(0.4),
+                size: 20,
+              ),
+              title: Text(
+                b.name,
+                style: TextStyle(
+                  color: b.id == conv.activeBranchId
+                      ? accent
+                      : Colors.white.withOpacity(0.7),
+                  fontWeight:
+                      b.id == conv.activeBranchId ? FontWeight.bold : FontWeight.normal,
+                  fontFamily: 'SpaceGrotesk',
+                ),
+              ),
+              subtitle: b.id == conv.activeBranchId
+                  ? Text(
+                      'Active',
+                      style: TextStyle(
+                        color: accent.withOpacity(0.6),
+                        fontSize: 11,
+                      ),
+                    )
+                  : null,
+              onTap: () {
+                Navigator.pop(ctx);
+                provider.switchBranch(b.id);
+              },
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openTimeMachine(BuildContext buildContext, ChatProvider provider) {
+    final conv = provider.currentConversation;
+    if (conv == null) return;
+    Navigator.push(
+      buildContext,
+      MaterialPageRoute(
+        builder: (_) => TimeMachineScreen(
+          conversation: conv,
+          provider: provider,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final accent = context.watch<SettingsProvider>().accentColor;
@@ -498,6 +592,42 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                     ),
+                    if (provider.currentConversation != null &&
+                        provider.currentConversation!.branches.length > 1)
+                      GestureDetector(
+                        onTap: () {
+                          _showBranchIndicator(context, provider);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          margin: const EdgeInsets.only(right: 4),
+                          decoration: BoxDecoration(
+                            color: accent.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: accent.withOpacity(0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.call_split_rounded,
+                                  size: 12, color: accent),
+                              const SizedBox(width: 4),
+                              Text(
+                                _getActiveBranchName(provider),
+                                style: TextStyle(
+                                  color: accent,
+                                  fontSize: 11,
+                                  fontFamily: 'SpaceGrotesk',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     const Spacer(),
                     IconButton(
                       icon: Icon(
@@ -506,6 +636,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       onPressed: _openSearch,
                       tooltip: 'Search messages',
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.account_tree_outlined,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        _openTimeMachine(context, provider);
+                      },
+                      tooltip: 'Chat Time Machine',
                     ),
                     IconButton(
                       icon: Icon(
@@ -721,7 +862,7 @@ class _HomeScreenState extends State<HomeScreen> {
             onRetry: isError ? () => provider.retryMessage() : null,
             onEdit: msg.role == 'user'
                 ? () {
-                    provider.deleteMessageAndSubsequent(msg.id).then((m) {
+                    provider.editMessageAndBranch(msg.id).then((m) {
                       if (m != null) {
                         _textController.text = m.content;
                         if (m.imageBase64 != null) {

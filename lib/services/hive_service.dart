@@ -3,6 +3,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import '../models/chat_conversation.dart';
 import '../models/diary_entry.dart';
 import '../models/memory_node.dart';
+import '../models/canvas_project.dart';
 
 class HiveService {
   static const _boxName = 'ai_chat_app';
@@ -10,6 +11,7 @@ class HiveService {
   static const _settingsKey = 'settings';
   static const _diaryKey = 'diary';
   static const _memoryKey = 'memories';
+  static const _canvasKey = 'canvas_projects';
 
   late Box _box;
 
@@ -72,5 +74,19 @@ class HiveService {
 
   Future<void> clearAll() async {
     await _box.clear();
+  }
+
+  Future<void> saveCanvasProjects(List<CanvasProject> projects) async {
+    final data = projects.map((p) => p.toJson()).toList();
+    await _box.put(_canvasKey, jsonEncode(data));
+  }
+
+  List<CanvasProject> loadCanvasProjects() {
+    final raw = _box.get(_canvasKey);
+    if (raw == null) return [];
+    final list = jsonDecode(raw) as List;
+    return list
+        .map((e) => CanvasProject.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 }

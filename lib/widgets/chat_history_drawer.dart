@@ -11,6 +11,8 @@ import '../screens/cognitive_lab_screen.dart';
 import '../screens/memory_constellation_screen.dart';
 import '../screens/synapse_screen.dart';
 import '../screens/voice_hub_screen.dart';
+import '../screens/time_machine_screen.dart';
+import '../screens/dream_canvas_screen.dart';
 
 class ChatHistoryDrawer extends StatelessWidget {
   final ChatProvider provider;
@@ -493,6 +495,95 @@ class ChatHistoryDrawer extends StatelessWidget {
                           builder: (_) => const VoiceHubScreen(),
                         ),
                       );
+                    },
+                  ),
+                  ListTile(
+                    dense: true,
+                    leading: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accent.withOpacity(0.12),
+                      ),
+                      child: Icon(
+                        Icons.dashboard_customize_outlined,
+                        size: 16,
+                        color: accent.withOpacity(0.7),
+                      ),
+                    ),
+                    title: Text(
+                      'Dream Canvas',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Infinite vision board',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.3),
+                        fontSize: 11,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const DreamCanvasScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    dense: true,
+                    leading: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accent.withOpacity(0.12),
+                      ),
+                      child: Icon(
+                        Icons.account_tree_outlined,
+                        size: 16,
+                        color: accent.withOpacity(0.7),
+                      ),
+                    ),
+                    title: Text(
+                      'Time Machine',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Branching & version tree',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.3),
+                        fontSize: 11,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      final conv =
+                          provider.currentConversation;
+                      if (conv != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => TimeMachineScreen(
+                              conversation: conv,
+                              provider: provider,
+                            ),
+                          ),
+                        );
+                      }
                     },
                   ),
                   Padding(
