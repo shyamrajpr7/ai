@@ -7,6 +7,8 @@ import '../models/chat_message.dart';
 import '../models/chat_conversation.dart';
 import '../models/diary_entry.dart';
 import '../models/memory_node.dart';
+import '../models/persona.dart';
+import '../models/synapse.dart';
 import '../services/ai_service.dart';
 import '../services/groq_service.dart';
 import '../services/ollama_service.dart';
@@ -855,6 +857,223 @@ class ChatProvider extends ChangeNotifier {
 
   Future<void> _saveMemories() async {
     await _hiveService.saveMemories(_memories);
+  }
+
+  // ── Synapse Collaboration ─────────────────────────────
+
+  SynapseSession? _synapseSession;
+  bool _synapseProcessing = false;
+  List<String> _synapsePersonaIds = [];
+
+  SynapseSession? get synapseSession => _synapseSession;
+  bool get synapseProcessing => _synapseProcessing;
+  List<String> get synapsePersonaIds => _synapsePersonaIds;
+
+  void initSynapse() {
+    _synapseSession = null;
+    _synapseProcessing = false;
+    _synapsePersonaIds = [];
+    notifyListeners();
+  }
+
+  void toggleSynapsePersona(String personaId) {
+    if (_synapsePersonaIds.contains(personaId)) {
+      if (_synapsePersonaIds.length <= 2) return;
+      _synapsePersonaIds.remove(personaId);
+    } else {
+      _synapsePersonaIds.add(personaId);
+    }
+    notifyListeners();
+  }
+
+  Future<void> startSynapse(String prompt) async {
+    if (prompt.trim().isEmpty) return;
+    if (_synapsePersonaIds.length < 2) return;
+    if (_synapseProcessing) return;
+
+    final personas = _settingsProvider.personas;
+    final participants = _synapsePersonaIds
+        .map((id) => personas.firstWhere((p) => p.id == id))
+        .toList();
+
+    _synapseSession = SynapseSession(
+      id: _uuid.v4(),
+      prompt: prompt,
+      participantIds: List.from(_synapsePersonaIds),
+      status: SynapseStatus.running,
+      currentTurn: 0,
+    );
+    _synapseProcessing = true;
+    notifyListeners();
+
+    try {
+      await _runSynapseTurn(prompt, participants, 0);
+    } catch (e) {
+      if (_synapseSession != null) {
+        _synapseSession!.status = SynapseStatus.error;
+        _synapseSession!.errorMessage = e.toString().replaceAll('Exception: ', '');
+      }
+      _synapseProcessing = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> _runSynapseTurn(
+    String prompt,
+    List<Persona> participants,
+    int turn,
+  ) async {
+    if (_synapseSession == null) return;
+    if (turn >= _synapseSession!.maxTurns) {
+      _synapseSession!.status = SynapseStatus.completed;
+      _synapseProcessing = false;
+      notifyListeners();
+      return;
+    }
+
+    for (var i = 0; i < participants.length; i++) {
+      if (_synapseSession!.status == SynapseStatus.paused) return;
+      if (_synapseSession!.status != SynapseStatus.running) return;
+
+      final speaker = participants[i];
+      final history = _buildSynapseHistory(_synapseSession!.messages);
+      final instruction = _synapseSession!.userInstruction;
+      var systemPrompt = speaker.systemPrompt;
+      systemPrompt += '\n\nYou are participating in a multi-persona collaboration.';
+      systemPrompt += '\nYour name: ${speaker.name}';
+      systemPrompt += '\nRespond as ${speaker.name} would. Keep responses concise (2-4 paragraphs).';
+      if (instruction != null && instruction.isNotEmpty) {
+        systemPrompt += '\n\nUser instruction: $instruction';
+      }
+
+      final aiService = createAIService();
+      final buffer = StringBuffer();
+      final msgId = _uuid.v4();
+
+      try {
+        await for (final chunk in aiService.streamResponse(
+          message: turn == 0 && i == 0
+              ? prompt
+              : 'Continue the discussion. Respond as $speaker.name.',
+          history: history,
+          systemPrompt: systemPrompt,
+        )) {
+          if (_synapseSession!.status == SynapseStatus.paused) return;
+          if (_synapseSession!.status != SynapseStatus.running) return;
+          buffer.write(chunk);
+
+          _addOrUpdateSynapseMessage(msgId, speaker, buffer.toString(), turn);
+          notifyListeners();
+        }
+
+        _finalizeSynapseMessage(msgId, speaker, buffer.toString(), turn);
+        _synapseSession!.currentTurn = turn;
+        notifyListeners();
+      } catch (e) {
+        final errMsg = '${speaker.name} encountered an error.';
+        _addOrUpdateSynapseMessage(msgId, speaker, errMsg, turn);
+        notifyListeners();
+      }
+    }
+
+    if (_synapseSession!.status == SynapseStatus.running) {
+      await _runSynapseTurn(prompt, participants, turn + 1);
+    }
+  }
+
+  void _addOrUpdateSynapseMessage(
+    String msgId,
+    Persona speaker,
+    String content,
+    int turn,
+  ) {
+    if (_synapseSession == null) return;
+    final existingIdx = _synapseSession!.messages.indexWhere((m) => m.id == msgId);
+    final msg = SynapseMessage(
+      id: msgId,
+      personaId: speaker.id,
+      personaName: speaker.name,
+      personaEmoji: speaker.emoji,
+      personaColor: speaker.color.value,
+      content: content,
+      turnNumber: turn,
+    );
+    if (existingIdx != -1) {
+      final msgs = [..._synapseSession!.messages];
+      msgs[existingIdx] = msg;
+      _synapseSession!.messages = msgs;
+    } else {
+      _synapseSession!.messages = [..._synapseSession!.messages, msg];
+    }
+  }
+
+  void _finalizeSynapseMessage(
+    String msgId,
+    Persona speaker,
+    String content,
+    int turn,
+  ) {
+    if (_synapseSession == null) return;
+    final existingIdx = _synapseSession!.messages.indexWhere((m) => m.id == msgId);
+    final msg = SynapseMessage(
+      id: msgId,
+      personaId: speaker.id,
+      personaName: speaker.name,
+      personaEmoji: speaker.emoji,
+      personaColor: speaker.color.value,
+      content: content,
+      turnNumber: turn,
+    );
+    if (existingIdx != -1) {
+      final msgs = [..._synapseSession!.messages];
+      msgs[existingIdx] = msg;
+      _synapseSession!.messages = msgs;
+    }
+  }
+
+  List<Map<String, String>> _buildSynapseHistory(List<SynapseMessage> messages) {
+    return messages.map((m) => {
+      'role': 'assistant',
+      'content': '${m.personaName}: ${m.content}',
+    }).toList();
+  }
+
+  void pauseSynapse() {
+    if (_synapseSession != null) {
+      _synapseSession!.status = SynapseStatus.paused;
+      notifyListeners();
+    }
+  }
+
+  void resumeSynapse() {
+    if (_synapseSession == null) return;
+    _synapseSession!.status = SynapseStatus.running;
+    _synapseProcessing = true;
+    notifyListeners();
+
+    final personas = _settingsProvider.personas;
+    final participants = _synapsePersonaIds
+        .map((id) => personas.firstWhere((p) => p.id == id))
+        .toList();
+
+    _runSynapseTurn(
+      _synapseSession!.prompt,
+      participants,
+      _synapseSession!.currentTurn,
+    );
+  }
+
+  void steerSynapse(String instruction) {
+    if (_synapseSession != null) {
+      _synapseSession!.userInstruction = instruction;
+      notifyListeners();
+    }
+  }
+
+  void stopSynapse() {
+    _synapseSession?.status = SynapseStatus.completed;
+    _synapseProcessing = false;
+    notifyListeners();
   }
 
   Future<void> _save() async {
