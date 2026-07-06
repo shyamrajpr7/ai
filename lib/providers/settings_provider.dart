@@ -21,6 +21,9 @@ class SettingsProvider extends ChangeNotifier {
   bool _initialized = false;
   List<Persona> _personas = [];
   String _activePersonaId = 'default-assistant';
+  double _speechRate = 0.5;
+  double _speechPitch = 1.0;
+  bool _voiceTriggerEnabled = false;
 
   Color get accentColor => _accentColor;
   BackendType get backend => _backend;
@@ -32,6 +35,9 @@ class SettingsProvider extends ChangeNotifier {
   bool get webSearchEnabled => _webSearchEnabled;
   bool get initialized => _initialized;
   List<Persona> get personas => _personas;
+  double get speechRate => _speechRate;
+  double get speechPitch => _speechPitch;
+  bool get voiceTriggerEnabled => _voiceTriggerEnabled;
 
   Persona get activePersona {
     final idx = _personas.indexWhere((p) => p.id == _activePersonaId);
@@ -55,6 +61,9 @@ class SettingsProvider extends ChangeNotifier {
       _temperature = (data['temperature'] as num?)?.toDouble() ?? 0.6;
       _webSearchEnabled = data['webSearchEnabled'] as bool? ?? false;
       _activePersonaId = data['activePersonaId'] as String? ?? 'default-assistant';
+      _speechRate = (data['speechRate'] as num?)?.toDouble() ?? 0.5;
+      _speechPitch = (data['speechPitch'] as num?)?.toDouble() ?? 1.0;
+      _voiceTriggerEnabled = data['voiceTriggerEnabled'] as bool? ?? false;
       final personasRaw = data['personas'] as List<dynamic>?;
       if (personasRaw != null) {
         _personas = personasRaw
@@ -117,6 +126,24 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setSpeechRate(double rate) async {
+    _speechRate = rate;
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> setSpeechPitch(double pitch) async {
+    _speechPitch = pitch;
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> setVoiceTriggerEnabled(bool enabled) async {
+    _voiceTriggerEnabled = enabled;
+    await _save();
+    notifyListeners();
+  }
+
   Future<void> setActivePersona(String id) async {
     _activePersonaId = id;
     await _save();
@@ -158,6 +185,9 @@ class SettingsProvider extends ChangeNotifier {
       'temperature': _temperature,
       'webSearchEnabled': _webSearchEnabled,
       'activePersonaId': _activePersonaId,
+      'speechRate': _speechRate,
+      'speechPitch': _speechPitch,
+      'voiceTriggerEnabled': _voiceTriggerEnabled,
       'personas': _personas.map((p) => p.toJson()).toList(),
     });
   }
