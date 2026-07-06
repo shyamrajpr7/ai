@@ -680,6 +680,119 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Cognitive Lab ─────────────────────────────────────
+
+  bool _labProcessing = false;
+  List<ArenaResult> _labResults = [];
+  List<ArenaModelConfig> _labModels = [];
+
+  bool get labProcessing => _labProcessing;
+  List<ArenaResult> get labResults => _labResults;
+  List<ArenaModelConfig> get labModels => _labModels;
+
+  void initLab() {
+    _labModels = [
+      ArenaModelConfig(id: 'groq', label: 'Groq Cloud'),
+      ArenaModelConfig(id: 'claude', label: 'Claude'),
+      ArenaModelConfig(id: 'ollama', label: 'Ollama'),
+    ];
+    _labResults = [];
+    _labProcessing = false;
+    notifyListeners();
+  }
+
+  void toggleLabModel(String id) {
+    final idx = _labModels.indexWhere((m) => m.id == id);
+    if (idx == -1) return;
+    final enabledCount = _labModels.where((m) => m.enabled).length;
+    if (_labModels[idx].enabled && enabledCount <= 1) return;
+    _labModels[idx].enabled = !_labModels[idx].enabled;
+    notifyListeners();
+  }
+
+  Future<void> runLab({
+    required String prompt,
+    String systemPrompt = '',
+    double temperature = 0.7,
+  }) async {
+    if (prompt.trim().isEmpty || _labProcessing) return;
+
+    _labProcessing = true;
+    final now = DateTime.now();
+    _labResults = _labModels
+        .where((m) => m.enabled)
+        .map((m) => ArenaResult(
+          modelId: m.id,
+          modelLabel: m.label,
+          startTime: now,
+        ))
+        .toList();
+    notifyListeners();
+
+    await Future.wait(_labResults.map((result) async {
+      try {
+        final service = _createLabService(result.modelId, temperature);
+        final buffer = StringBuffer();
+        var isFirstChunk = true;
+        await for (final chunk in service.streamResponse(
+          message: prompt,
+          history: [],
+          systemPrompt: systemPrompt,
+        )) {
+          if (isFirstChunk) {
+            isFirstChunk = false;
+            result.firstTokenTime = DateTime.now();
+          }
+          buffer.write(chunk);
+          result.content = buffer.toString();
+          notifyListeners();
+        }
+        result.isComplete = true;
+        result.endTime = DateTime.now();
+        notifyListeners();
+      } catch (e) {
+        result.error = e.toString().replaceAll('Exception: ', '');
+        result.isComplete = true;
+        result.endTime = DateTime.now();
+        notifyListeners();
+      }
+    }));
+
+    _labProcessing = false;
+    notifyListeners();
+  }
+
+  AIService _createLabService(String modelId, double temperature) {
+    switch (modelId) {
+      case 'groq':
+        final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
+        if (apiKey.isEmpty || apiKey == 'your_groq_api_key_here') {
+          throw Exception('Set your Groq API key in the .env file');
+        }
+        return GroqService(apiKey: apiKey, model: _settingsProvider.groqModel, temperature: temperature);
+      case 'claude':
+        final apiKey = dotenv.env['ANTHROPIC_API_KEY'] ?? '';
+        if (apiKey.isEmpty) {
+          throw Exception('Set your Anthropic API key in the .env file');
+        }
+        return ClaudeService(apiKey: apiKey, model: _settingsProvider.claudeModel, temperature: temperature);
+      case 'ollama':
+        return OllamaService(
+          endpoint: _settingsProvider.ollamaEndpoint,
+          model: _settingsProvider.ollamaModel,
+          temperature: temperature,
+        );
+      default:
+        throw Exception('Unknown model: $modelId');
+    }
+  }
+
+  void clearLab() {
+    _labResults = [];
+    _labProcessing = false;
+    notifyListeners();
+  }
+
   Future<void> _save() async {
     await _hiveService.saveConversations(_conversations);
   }
