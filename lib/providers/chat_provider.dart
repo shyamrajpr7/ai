@@ -6,6 +6,7 @@ import 'package:uuid/uuid.dart';
 import '../models/chat_message.dart';
 import '../models/chat_conversation.dart';
 import '../models/diary_entry.dart';
+import '../models/memory_node.dart';
 import '../services/ai_service.dart';
 import '../services/groq_service.dart';
 import '../services/ollama_service.dart';
@@ -97,6 +98,7 @@ class ChatProvider extends ChangeNotifier {
     if (_conversations.isNotEmpty) {
       _currentConversationId = _conversations.first.id;
     }
+    _memories = _hiveService.loadMemories();
     _initialized = true;
     notifyListeners();
   }
@@ -190,7 +192,11 @@ class ChatProvider extends ChangeNotifier {
           .toList();
 
       final aiService = createAIService();
-      final systemPrompt = _settingsProvider.activePersona.systemPrompt;
+      var systemPrompt = _settingsProvider.activePersona.systemPrompt;
+      final memoryContext = _buildMemoryContext(text);
+      if (memoryContext.isNotEmpty) {
+        systemPrompt += '\n\n--- Memory Context ---\n$memoryContext';
+      }
       final fullResponse = StringBuffer();
 
       await for (final chunk in aiService.streamResponse(
@@ -791,6 +797,64 @@ class ChatProvider extends ChangeNotifier {
     _labResults = [];
     _labProcessing = false;
     notifyListeners();
+  }
+
+  // ── Memory Core ───────────────────────────────────────
+
+  List<MemoryNode> _memories = [];
+
+  List<MemoryNode> get memories => List.unmodifiable(_memories);
+
+  Future<void> addMemory(MemoryNode memory) async {
+    _memories.insert(0, memory);
+    await _saveMemories();
+    notifyListeners();
+  }
+
+  Future<void> updateMemory(MemoryNode memory) async {
+    final idx = _memories.indexWhere((m) => m.id == memory.id);
+    if (idx != -1) {
+      memory.updatedAt = DateTime.now();
+      _memories[idx] = memory;
+      await _saveMemories();
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteMemory(String id) async {
+    _memories.removeWhere((m) => m.id == id);
+    await _saveMemories();
+    notifyListeners();
+  }
+
+  String _buildMemoryContext(String userMessage) {
+    if (_memories.isEmpty) return '';
+    final relevant = _memories
+        .where((m) => _isRelevant(m, userMessage))
+        .take(5)
+        .toList();
+    if (relevant.isEmpty) return '';
+    return relevant.map((m) =>
+      '[${m.category}] ${m.content}'
+    ).join('\n');
+  }
+
+  bool _isRelevant(MemoryNode memory, String message) {
+    final msg = message.toLowerCase();
+    final words = msg.split(RegExp(r'\s+'));
+    for (final word in words) {
+      if (word.length < 3) continue;
+      if (memory.content.toLowerCase().contains(word)) return true;
+      for (final tag in memory.tags) {
+        if (tag.toLowerCase().contains(word)) return true;
+      }
+      if (memory.category.toLowerCase().contains(word)) return true;
+    }
+    return false;
+  }
+
+  Future<void> _saveMemories() async {
+    await _hiveService.saveMemories(_memories);
   }
 
   Future<void> _save() async {

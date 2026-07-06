@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../models/chat_conversation.dart';
 import '../models/diary_entry.dart';
+import '../models/memory_node.dart';
 
 class HiveService {
   static const _boxName = 'ai_chat_app';
   static const _convKey = 'conversations';
   static const _settingsKey = 'settings';
   static const _diaryKey = 'diary';
+  static const _memoryKey = 'memories';
 
   late Box _box;
 
@@ -51,6 +53,20 @@ class HiveService {
     final list = jsonDecode(raw) as List;
     return list
         .map((e) => DiaryEntry.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> saveMemories(List<MemoryNode> memories) async {
+    final data = memories.map((m) => m.toJson()).toList();
+    await _box.put(_memoryKey, jsonEncode(data));
+  }
+
+  List<MemoryNode> loadMemories() {
+    final raw = _box.get(_memoryKey);
+    if (raw == null) return [];
+    final list = jsonDecode(raw) as List;
+    return list
+        .map((e) => MemoryNode.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
