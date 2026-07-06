@@ -11,6 +11,7 @@ class SettingsProvider extends ChangeNotifier {
   final HiveService _hiveService;
 
   Color _accentColor = const Color(0xFF7C4DFF);
+  Color? _moodAccentColor; // overridden by mood analytics auto-theme
   BackendType _backend = BackendType.groq;
   String _groqModel = 'llama-3.1-8b-instant';
   String _ollamaEndpoint = 'http://localhost:11434/v1';
@@ -25,7 +26,7 @@ class SettingsProvider extends ChangeNotifier {
   double _speechPitch = 1.0;
   bool _voiceTriggerEnabled = false;
 
-  Color get accentColor => _accentColor;
+  Color get accentColor => _moodAccentColor ?? _accentColor;
   BackendType get backend => _backend;
   String get groqModel => _groqModel;
   String get ollamaEndpoint => _ollamaEndpoint;
@@ -80,7 +81,18 @@ class SettingsProvider extends ChangeNotifier {
 
   Future<void> setAccentColor(Color color) async {
     _accentColor = color;
+    _moodAccentColor = null;
     await _save();
+    notifyListeners();
+  }
+
+  void setMoodAccentColor(Color color) {
+    _moodAccentColor = color;
+    notifyListeners();
+  }
+
+  void clearMoodAccent() {
+    _moodAccentColor = null;
     notifyListeners();
   }
 

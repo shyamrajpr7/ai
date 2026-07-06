@@ -13,6 +13,7 @@ import '../screens/synapse_screen.dart';
 import '../screens/voice_hub_screen.dart';
 import '../screens/time_machine_screen.dart';
 import '../screens/dream_canvas_screen.dart';
+import '../screens/mood_dashboard_screen.dart';
 
 class ChatHistoryDrawer extends StatelessWidget {
   final ChatProvider provider;
@@ -534,6 +535,47 @@ class ChatHistoryDrawer extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (_) => const DreamCanvasScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  ListTile(
+                    dense: true,
+                    leading: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: accent.withOpacity(0.12),
+                      ),
+                      child: Icon(
+                        Icons.insights,
+                        size: 16,
+                        color: accent.withOpacity(0.7),
+                      ),
+                    ),
+                    title: Text(
+                      'Mood Analytics',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 14,
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    subtitle: Text(
+                      'Sentiment, topics & cognitive map',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.3),
+                        fontSize: 11,
+                      ),
+                    ),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MoodDashboardScreen(),
                         ),
                       );
                     },

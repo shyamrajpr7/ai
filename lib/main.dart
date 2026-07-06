@@ -5,6 +5,7 @@ import 'services/hive_service.dart';
 import 'providers/chat_provider.dart';
 import 'providers/settings_provider.dart';
 import 'providers/canvas_provider.dart';
+import 'providers/mood_provider.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -24,12 +25,16 @@ void main() async {
   final canvasProvider = CanvasProvider(hiveService);
   await canvasProvider.load();
 
+  final moodProvider = MoodProvider(hiveService, settingsProvider);
+  await moodProvider.load();
+
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: settingsProvider),
         ChangeNotifierProvider.value(value: chatProvider),
         ChangeNotifierProvider.value(value: canvasProvider),
+        ChangeNotifierProvider.value(value: moodProvider),
       ],
       child: const NexusApp(),
     ),
