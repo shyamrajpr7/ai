@@ -16,13 +16,14 @@ class _SplashScreenState extends State<SplashScreen>
   late AnimationController _logoController;
   late AnimationController _ringController;
   late AnimationController _taglineController;
+  late AnimationController _glowController;
 
   @override
   void initState() {
     super.initState();
     _particleController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 6),
+      duration: const Duration(seconds: 8),
     )..repeat();
 
     _logoController = AnimationController(
@@ -40,11 +41,16 @@ class _SplashScreenState extends State<SplashScreen>
       duration: const Duration(seconds: 1),
     );
 
-    Future.delayed(const Duration(milliseconds: 400), () {
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) _logoController.forward();
     });
 
-    Future.delayed(const Duration(milliseconds: 1400), () {
+    Future.delayed(const Duration(milliseconds: 1200), () {
       if (mounted) _taglineController.forward();
     });
 
@@ -79,6 +85,7 @@ class _SplashScreenState extends State<SplashScreen>
     _logoController.dispose();
     _ringController.dispose();
     _taglineController.dispose();
+    _glowController.dispose();
     super.dispose();
   }
 
@@ -101,10 +108,11 @@ class _SplashScreenState extends State<SplashScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 AnimatedBuilder(
-                  animation: Listenable.merge([_logoController, _ringController]),
+                  animation: Listenable.merge([_logoController, _ringController, _glowController]),
                   builder: (context, _) {
                     final t = _logoController.value;
                     final ringT = _ringController.value;
+                    final glowT = _glowController.value;
                     return Opacity(
                       opacity: t,
                       child: Transform.scale(
@@ -112,19 +120,28 @@ class _SplashScreenState extends State<SplashScreen>
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            // Outer pulsing ring
                             Container(
-                              width: 120 + ringT * 20,
-                              height: 120 + ringT * 20,
+                              width: 130 + ringT * 25,
+                              height: 130 + ringT * 25,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: const Color(0xFF7C4DFF).withOpacity(0.2 - ringT * 0.1),
+                                  color: const Color(0xFF7C4DFF).withOpacity(0.15 - ringT * 0.08),
                                   width: 1,
                                 ),
                               ),
                             ),
-                            // Middle glow ring
+                            Container(
+                              width: 110 + ringT * 15,
+                              height: 110 + ringT * 15,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: const Color(0xFF448AFF).withOpacity(0.1 - ringT * 0.05),
+                                  width: 0.5,
+                                ),
+                              ),
+                            ),
                             Container(
                               width: 100,
                               height: 100,
@@ -132,14 +149,13 @@ class _SplashScreenState extends State<SplashScreen>
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF7C4DFF).withOpacity(0.2 + ringT * 0.15),
-                                    blurRadius: 30 + ringT * 20,
-                                    spreadRadius: 5 + ringT * 5,
+                                    color: const Color(0xFF7C4DFF).withOpacity(0.2 + glowT * 0.2),
+                                    blurRadius: 30 + glowT * 30,
+                                    spreadRadius: 5 + glowT * 8,
                                   ),
                                 ],
                               ),
                             ),
-                            // Logo circle
                             Container(
                               width: 88,
                               height: 88,
@@ -181,14 +197,27 @@ class _SplashScreenState extends State<SplashScreen>
                       opacity: t,
                       child: Transform.translate(
                         offset: Offset(0, 10 * (1 - t)),
-                        child: const Text(
-                          'Nexus',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 42,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'SpaceGrotesk',
-                            letterSpacing: -1,
+                        child: ShaderMask(
+                          shaderCallback: (bounds) {
+                            return LinearGradient(
+                              colors: [
+                                Colors.white,
+                                const Color(0xFF7C4DFF).withOpacity(0.9),
+                                Colors.white,
+                              ],
+                              stops: const [0.0, 0.5, 1.0],
+                            ).createShader(bounds);
+                          },
+                          blendMode: BlendMode.srcIn,
+                          child: const Text(
+                            'Nexus',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 42,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'SpaceGrotesk',
+                              letterSpacing: -1,
+                            ),
                           ),
                         ),
                       ),
@@ -210,7 +239,7 @@ class _SplashScreenState extends State<SplashScreen>
                             color: Colors.white.withOpacity(0.5),
                             fontSize: 14,
                             fontFamily: 'Inter',
-                            letterSpacing: 3,
+                            letterSpacing: 4,
                             fontWeight: FontWeight.w300,
                           ),
                         ),
@@ -241,11 +270,12 @@ class _ParticlePainter extends CustomPainter {
       const Color(0xFF00BCD4),
     ];
 
-    for (int i = 0; i < 40; i++) {
+    for (int i = 0; i < 50; i++) {
       final seed = i * 137.5;
       final color = colors[i % colors.length];
+      final opacity = 0.1 + (seed % 10) / 10 * 0.15;
       final paint = Paint()
-        ..color = color.withOpacity(0.15 + (seed % 10) / 10 * 0.15)
+        ..color = color.withOpacity(opacity)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
       final phase = (seed * 0.01) % (2 * pi);

@@ -16,7 +16,7 @@ class _ThinkingIndicatorState extends State<ThinkingIndicator>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1000),
     )..repeat();
   }
 
@@ -37,16 +37,28 @@ class _ThinkingIndicatorState extends State<ThinkingIndicator>
             final delay = i * 0.15;
             final t = ((_controller.value - delay) % 1.0);
             final scale = 0.3 + 0.7 * (1 - (t * 2 - 1).abs());
+            final opacity = 0.3 + 0.7 * scale;
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 2),
               child: Transform.scale(
                 scale: scale,
                 child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Color(0xFF7C4DFF),
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFF7C4DFF).withOpacity(opacity),
+                        const Color(0xFF7C4DFF).withOpacity(opacity * 0.6),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF7C4DFF).withOpacity(0.3 * opacity),
+                        blurRadius: 4,
+                      ),
+                    ],
                   ),
                 ),
               ),

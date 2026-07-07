@@ -63,47 +63,98 @@ class NexusApp extends StatelessWidget {
   }
 
   ThemeData _buildTheme(Color accent) {
+    final surfaceDark = const Color(0xFF0A0A0F);
+    final surfaceCard = const Color(0xFF12121A);
+    final surfaceElevated = const Color(0xFF1A1A2E);
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: const Color(0xFF0A0A0F),
+      scaffoldBackgroundColor: surfaceDark,
       colorScheme: ColorScheme.dark(
         primary: accent,
         secondary: const Color(0xFF448AFF),
-        surface: const Color(0xFF0A0A0F),
+        surface: surfaceDark,
+        error: const Color(0xFFEF5350),
       ),
       fontFamily: 'Inter',
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        centerTitle: false,
       ),
-      drawerTheme: const DrawerThemeData(
-        backgroundColor: Color(0xFF0A0A0F),
+      drawerTheme: DrawerThemeData(
+        backgroundColor: surfaceDark,
+        shape: const RoundedRectangleBorder(),
       ),
       snackBarTheme: SnackBarThemeData(
-        backgroundColor: accent.withOpacity(0.8),
+        backgroundColor: surfaceElevated,
+        contentTextStyle: const TextStyle(color: Colors.white, fontSize: 14),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: surfaceElevated,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+          fontFamily: 'SpaceGrotesk',
+        ),
+      ),
+      cardTheme: CardThemeData(
+        color: surfaceCard,
+        elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
       ),
-      cardTheme: CardThemeData(
-        color: const Color(0xFF1A1A2E),
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.05),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.08)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: accent.withOpacity(0.5), width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
       ),
       textSelectionTheme: TextSelectionThemeData(
         cursorColor: accent,
         selectionColor: accent.withOpacity(0.3),
         selectionHandleColor: accent,
+      ),
+      dividerTheme: DividerThemeData(
+        color: Colors.white.withOpacity(0.06),
+        thickness: 1,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: surfaceElevated.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
+        ),
+        textStyle: const TextStyle(color: Colors.white, fontSize: 12),
+      ),
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: {
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
       ),
     );
   }

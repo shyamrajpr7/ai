@@ -46,6 +46,7 @@ class _GlassInputBarState extends State<GlassInputBar>
   bool _isListening = false;
   bool _speechAvailable = false;
   late AnimationController _pulseController;
+  late AnimationController _sendPulseController;
 
   @override
   void initState() {
@@ -54,6 +55,10 @@ class _GlassInputBarState extends State<GlassInputBar>
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
+    );
+    _sendPulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
     );
   }
 
@@ -80,6 +85,7 @@ class _GlassInputBarState extends State<GlassInputBar>
           _pulseController.stop();
           widget.controller.text = result.recognizedWords;
           if (result.recognizedWords.trim().isNotEmpty) {
+            _animateSend();
             widget.onSend();
           }
         }
@@ -108,10 +114,15 @@ class _GlassInputBarState extends State<GlassInputBar>
     widget.onImagePicked(base64);
   }
 
+  void _animateSend() {
+    _sendPulseController.forward().then((_) => _sendPulseController.reverse());
+  }
+
   @override
   void dispose() {
     _speech.stop();
     _pulseController.dispose();
+    _sendPulseController.dispose();
     super.dispose();
   }
 
@@ -126,6 +137,7 @@ class _GlassInputBarState extends State<GlassInputBar>
   }
 
   void _onSubmit() {
+    _animateSend();
     if (widget.isImageGen) {
       widget.onGenerateImage();
     } else if (widget.isVideoGen) {
@@ -137,85 +149,91 @@ class _GlassInputBarState extends State<GlassInputBar>
 
   @override
   Widget build(BuildContext context) {
-    final accent = const Color(0xFF7C4DFF);
+    final accent = context.watch<SettingsProvider>().accentColor;
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(
-          color: _isActive
-              ? accent.withOpacity(0.25)
-              : Colors.white.withOpacity(0.08),
-          width: _isActive ? 1.5 : 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: _isActive
-                ? accent.withOpacity(0.15)
-                : accent.withOpacity(0.1),
-            blurRadius: _isActive ? 24 : 20,
-            spreadRadius: _isActive ? 2 : 0,
+    return AnimatedBuilder(
+      animation: _sendPulseController,
+      builder: (context, _) {
+        final sendPulse = _sendPulseController.value;
+        return Container(
+          margin: EdgeInsets.fromLTRB(12, 0, 12, 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(
+              color: _isActive
+                  ? accent.withOpacity(0.25)
+                  : Colors.white.withOpacity(0.08),
+              width: _isActive ? 1.5 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _isActive
+                    ? accent.withOpacity(0.2)
+                    : accent.withOpacity(0.1),
+                blurRadius: _isActive ? 28 : 20,
+                spreadRadius: _isActive ? 2 + sendPulse * 3 : 0,
+              ),
+              BoxShadow(
+                color: accent.withOpacity(0.05),
+                blurRadius: 40,
+                spreadRadius: -10,
+              ),
+            ],
           ),
-          BoxShadow(
-            color: accent.withOpacity(0.05),
-            blurRadius: 40,
-            spreadRadius: -10,
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-          child: Container(
-            color: _isActive
-                ? accent.withOpacity(0.04)
-                : Colors.white.withOpacity(0.04),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _buildMicButton(accent),
-                Expanded(
-                  child: TextField(
-                    controller: widget.controller,
-                    maxLines: 4,
-                    minLines: 1,
-                    textCapitalization: TextCapitalization.sentences,
-                    style: TextStyle(
-                      color: _isActive
-                          ? accent.withOpacity(0.9)
-                          : Colors.white,
-                      fontSize: 15,
-                      fontFamily: 'Inter',
-                      height: 1.4,
-                    ),
-                    decoration: InputDecoration(
-                      hintText: widget.isProcessing
-                          ? 'Generating...'
-                          : _hintText,
-                      hintStyle: TextStyle(
-                        color: (_isActive ? accent : Colors.white).withOpacity(0.3),
-                        fontSize: 15,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+              child: Container(
+                color: _isActive
+                    ? accent.withOpacity(0.04)
+                    : Colors.white.withOpacity(0.04),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _buildMicButton(accent),
+                    Expanded(
+                      child: TextField(
+                        controller: widget.controller,
+                        maxLines: 4,
+                        minLines: 1,
+                        textCapitalization: TextCapitalization.sentences,
+                        style: TextStyle(
+                          color: _isActive
+                              ? accent.withOpacity(0.9)
+                              : Colors.white,
+                          fontSize: 15,
+                          fontFamily: 'Inter',
+                          height: 1.4,
+                        ),
+                        decoration: InputDecoration(
+                          hintText: widget.isProcessing
+                              ? 'Generating...'
+                              : _hintText,
+                          hintStyle: TextStyle(
+                            color: (_isActive ? accent : Colors.white).withOpacity(0.3),
+                            fontSize: 15,
+                          ),
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 10),
+                        ),
+                        onSubmitted: (_) => _onSubmit(),
                       ),
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 10),
                     ),
-                    onSubmitted: (_) => _onSubmit(),
-                  ),
+                    _buildGenButton(accent),
+                    _buildVideoGenButton(accent),
+                    _buildImageButton(accent),
+                    const SizedBox(width: 4),
+                    _buildSendButton(accent),
+                  ],
                 ),
-                _buildGenButton(accent),
-                _buildVideoGenButton(accent),
-                _buildImageButton(accent),
-                const SizedBox(width: 4),
-                _buildSendButton(accent),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -291,11 +309,11 @@ class _GlassInputBarState extends State<GlassInputBar>
           children: [
             if (_isListening)
               Container(
-                width: 44 + pulse * 12,
-                height: 44 + pulse * 12,
+                width: 44 + pulse * 16,
+                height: 44 + pulse * 16,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: accent.withOpacity(0.1 * (1 - pulse)),
+                  color: accent.withOpacity(0.08 * (1 - pulse)),
                 ),
               ),
             GestureDetector(
@@ -377,58 +395,39 @@ class _GlassInputBarState extends State<GlassInputBar>
       );
     }
 
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: widget.isImageGen
-            ? LinearGradient(
-                colors: [
-                  accent,
-                  const Color(0xFFE040FB),
-                ],
-              )
-            : widget.isVideoGen
-                ? LinearGradient(
-                    colors: [
-                      accent,
-                      const Color(0xFF00E5FF),
-                    ],
-                  )
-                : LinearGradient(
-                    colors: [
-                      accent,
-                      const Color(0xFF448AFF),
-                    ],
-                  ),
-        boxShadow: [
-          BoxShadow(
-            color: accent.withOpacity(0.4),
-            blurRadius: 12,
-            spreadRadius: 0,
+    return GestureDetector(
+      onTap: _onSubmit,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: widget.isImageGen
+                ? [accent, const Color(0xFFE040FB)]
+                : widget.isVideoGen
+                    ? [accent, const Color(0xFF00E5FF)]
+                    : [accent, const Color(0xFF448AFF)],
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: widget.isImageGen
-              ? widget.onGenerateImage
-              : widget.isVideoGen
-                  ? widget.onGenerateVideo
-                  : widget.onSend,
-          child: Center(
-            child: Icon(
-              widget.isImageGen
-                  ? Icons.auto_awesome
-                  : widget.isVideoGen
-                      ? Icons.videocam
-                      : Icons.arrow_upward_rounded,
-              color: Colors.white,
-              size: 22,
+          boxShadow: [
+            BoxShadow(
+              color: accent.withOpacity(0.4),
+              blurRadius: 12,
+              spreadRadius: 0,
             ),
+          ],
+        ),
+        child: Center(
+          child: Icon(
+            widget.isImageGen
+                ? Icons.auto_awesome
+                : widget.isVideoGen
+                    ? Icons.videocam
+                    : Icons.arrow_upward_rounded,
+            color: Colors.white,
+            size: 22,
           ),
         ),
       ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
 
 class GlowText extends StatefulWidget {
   final String text;
@@ -30,7 +32,7 @@ class _GlowTextState extends State<GlowText>
 
   @override
   Widget build(BuildContext context) {
-    final accent = const Color(0xFF7C4DFF);
+    final accent = context.watch<SettingsProvider>().accentColor;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {

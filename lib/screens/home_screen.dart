@@ -147,7 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Container(
               margin: const EdgeInsets.symmetric(vertical: 12),
-              width: 36,
+              width: 40,
               height: 4,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.15),
@@ -205,7 +205,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ],
               ),
             ),
-            const Divider(color: Color(0xFF1A1A2E), height: 1),
+            Container(height: 1, color: const Color(0xFF1A1A2E)),
             ConstrainedBox(
               constraints: BoxConstraints(
                 maxHeight: MediaQuery.of(ctx).size.height * 0.4,
@@ -526,9 +526,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHeader(BuildContext buildContext, Color accent, ChatProvider provider) {
     return ClipRRect(
       child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.02),
             border: Border(
@@ -709,7 +709,7 @@ class _HomeScreenState extends State<HomeScreen> {
             controller: _searchController,
             focusNode: _searchFocusNode,
             autofocus: true,
-            style: TextStyle(
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 15,
               fontFamily: 'Inter',
@@ -752,98 +752,22 @@ class _HomeScreenState extends State<HomeScreen> {
     final conv = provider.currentConversation;
 
     if (conv == null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    accent.withOpacity(0.12),
-                    accent.withOpacity(0.03),
-                  ],
-                ),
-              ),
-              child: Icon(
-                Icons.chat_bubble_outline_rounded,
-                size: 36,
-                color: accent.withOpacity(0.3),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Start a conversation',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.5),
-                fontSize: 18,
-                fontFamily: 'SpaceGrotesk',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Tap + to create a new chat',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.25),
-                fontSize: 14,
-                fontFamily: 'Inter',
-              ),
-            ),
-          ],
-        ),
+      return _buildEmptyState(
+        icon: Icons.chat_bubble_outline_rounded,
+        title: 'Start a conversation',
+        subtitle: 'Tap + to create a new chat',
+        accent: accent,
       );
     }
 
     final messages = conv.messages.toList();
 
     if (messages.isEmpty && !provider.isProcessing) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 88,
-              height: 88,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    accent.withOpacity(0.15),
-                    accent.withOpacity(0.05),
-                  ],
-                ),
-              ),
-              child: Icon(
-                Icons.auto_awesome,
-                size: 40,
-                color: accent.withOpacity(0.4),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Ask me anything',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.6),
-                fontSize: 18,
-                fontFamily: 'SpaceGrotesk',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'I\'m here to help with anything you need',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.25),
-                fontSize: 14,
-                fontFamily: 'Inter',
-              ),
-            ),
-          ],
-        ),
+      return _buildEmptyState(
+        icon: Icons.auto_awesome,
+        title: 'Ask me anything',
+        subtitle: 'I\'m here to help with anything you need',
+        accent: accent,
       );
     }
 
@@ -887,6 +811,58 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         }
       },
+    );
+  }
+
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color accent,
+  }) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  accent.withOpacity(0.15),
+                  accent.withOpacity(0.05),
+                ],
+              ),
+            ),
+            child: Icon(
+              icon,
+              size: 40,
+              color: accent.withOpacity(0.4),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 18,
+              fontFamily: 'SpaceGrotesk',
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.25),
+              fontSize: 14,
+              fontFamily: 'Inter',
+            ),
+          ),
+        ],
+      ),
     );
   }
 

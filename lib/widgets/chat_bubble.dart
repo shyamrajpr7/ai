@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import '../models/chat_message.dart';
+import '../providers/settings_provider.dart';
 import '../services/tts_service.dart';
 import 'glow_text.dart';
 import 'code_block.dart';
@@ -31,14 +34,14 @@ class ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.role == 'user';
-    final accent = const Color(0xFF7C4DFF);
+    final accent = context.watch<SettingsProvider>().accentColor;
 
     return Padding(
       padding: EdgeInsets.only(
-        left: isUser ? 60 : 12,
-        right: isUser ? 12 : 60,
-        top: 6,
-        bottom: 6,
+        left: isUser ? 64 : 12,
+        right: isUser ? 12 : 64,
+        top: 5,
+        bottom: 5,
       ),
       child: Row(
         mainAxisAlignment:
@@ -54,50 +57,57 @@ class ChatBubble extends StatelessWidget {
                   isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 GestureDetector(
-                  onLongPress: () => _showContextMenu(context, isUser),
+                  onLongPress: () => _showContextMenu(context, isUser, accent),
                   child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.only(
-                        topLeft:
-                            Radius.circular(isUser ? 20 : 4),
-                        topRight:
-                            Radius.circular(isUser ? 4 : 20),
+                        topLeft: Radius.circular(isUser ? 20 : 4),
+                        topRight: Radius.circular(isUser ? 4 : 20),
                         bottomLeft: const Radius.circular(20),
                         bottomRight: const Radius.circular(20),
                       ),
+                      gradient: isUser
+                          ? LinearGradient(
+                              colors: [
+                                accent.withOpacity(0.25),
+                                accent.withOpacity(0.15),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : null,
                       color: isUser
-                          ? accent.withOpacity(0.2)
+                          ? null
                           : Colors.white.withOpacity(0.06),
                       border: Border.all(
                         color: isUser
                             ? accent.withOpacity(0.3)
-                            : Colors.white.withOpacity(0.08),
+                            : Colors.white.withOpacity(0.06),
                         width: 0.5,
                       ),
                       boxShadow: [
                         BoxShadow(
                           color: isUser
-                              ? accent.withOpacity(0.08)
-                              : Colors.black.withOpacity(0.1),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                              ? accent.withOpacity(0.1)
+                              : Colors.black.withOpacity(0.12),
+                          blurRadius: 12,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
                     child: _buildContent(context, isUser, accent),
-                  )
-                      .animate()
-                      .fadeIn(
-                          duration: 300.ms,
-                          curve: Curves.easeOutCubic)
-                      .slideX(
-                          begin: isUser ? 0.15 : -0.15,
-                          end: 0,
-                          duration: 300.ms,
-                          curve: Curves.easeOutCubic),
+                  ).animate().fadeIn(
+                    duration: 350.ms,
+                    curve: Curves.easeOutCubic,
+                  ).slideX(
+                    begin: isUser ? 0.1 : -0.1,
+                    end: 0,
+                    duration: 350.ms,
+                    curve: Curves.easeOutCubic,
+                  ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 if (!isStreaming && !isError)
                   Padding(
                     padding: EdgeInsets.only(
@@ -107,55 +117,46 @@ class ChatBubble extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
-                          _formatTime(message.timestamp),
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.15),
-                            fontSize: 11,
-                            fontFamily: 'Inter',
-                          ),
+                        _ActionIcon(
+                          icon: Icons.access_time_rounded,
+                          size: 10,
+                          label: _formatTime(message.timestamp),
+                          color: Colors.white.withOpacity(0.15),
                         ),
-                        const SizedBox(width: 8),
-                        GestureDetector(
+                        const SizedBox(width: 6),
+                        _ActionIcon(
+                          icon: Icons.copy_rounded,
+                          size: 11,
                           onTap: () {
                             Clipboard.setData(ClipboardData(text: message.content));
                             HapticFeedback.lightImpact();
                           },
-                          child: Icon(
-                            Icons.copy_rounded,
-                            size: 12,
-                            color: Colors.white.withOpacity(0.15),
-                          ),
                         ),
                         if (!isUser && message.content.isNotEmpty) ...[
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 6),
                           ListenableBuilder(
                             listenable: TtsService.instance,
                             builder: (context, _) {
                               final playing = TtsService.instance.isSpeaking(message.id);
-                              return GestureDetector(
+                              return _ActionIcon(
+                                icon: playing ? Icons.volume_up_rounded : Icons.volume_up_outlined,
+                                size: 11,
+                                color: playing ? accent : null,
+                                activeColor: accent,
                                 onTap: () {
                                   HapticFeedback.lightImpact();
                                   TtsService.instance.toggle(message.id, message.content);
                                 },
-                                child: Icon(
-                                  playing ? Icons.volume_up_rounded : Icons.volume_up_outlined,
-                                  size: 12,
-                                  color: playing ? accent : Colors.white.withOpacity(0.15),
-                                ),
                               );
                             },
                           ),
                         ],
                         if (isUser) ...[
-                          const SizedBox(width: 8),
-                          GestureDetector(
+                          const SizedBox(width: 6),
+                          _ActionIcon(
+                            icon: Icons.edit_rounded,
+                            size: 11,
                             onTap: () => onEdit?.call(),
-                            child: Icon(
-                              Icons.edit_rounded,
-                              size: 12,
-                              color: Colors.white.withOpacity(0.15),
-                            ),
                           ),
                         ],
                       ],
@@ -172,17 +173,17 @@ class ChatBubble extends StatelessWidget {
     );
   }
 
-  void _showContextMenu(BuildContext context, bool isUser) {
+  void _showContextMenu(BuildContext context, bool isUser, Color accent) {
     HapticFeedback.mediumImpact();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF1A1A2E),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          color: const Color(0xFF12121A),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           border: Border(
-            top: BorderSide(color: Colors.white.withOpacity(0.06)),
+            top: BorderSide(color: Colors.white.withOpacity(0.08)),
           ),
         ),
         padding: EdgeInsets.only(
@@ -192,8 +193,8 @@ class ChatBubble extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              margin: const EdgeInsets.symmetric(vertical: 10),
-              width: 36,
+              margin: const EdgeInsets.symmetric(vertical: 12),
+              width: 40,
               height: 4,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.15),
@@ -203,6 +204,7 @@ class ChatBubble extends StatelessWidget {
             _menuOption(
               icon: Icons.copy_rounded,
               label: 'Copy',
+              accent: accent,
               onTap: () {
                 Navigator.pop(ctx);
                 Clipboard.setData(ClipboardData(text: message.content));
@@ -210,10 +212,11 @@ class ChatBubble extends StatelessWidget {
               },
             ),
             if (!isUser && message.content.isNotEmpty) ...[
-              const Divider(color: Color(0xFF0A0A0F), height: 1),
+              Container(height: 1, color: Colors.white.withOpacity(0.04)),
               _menuOption(
                 icon: Icons.volume_up_outlined,
                 label: 'Read Aloud',
+                accent: accent,
                 onTap: () {
                   Navigator.pop(ctx);
                   TtsService.instance.toggle(message.id, message.content);
@@ -221,25 +224,28 @@ class ChatBubble extends StatelessWidget {
               ),
             ],
             if (isUser) ...[
-              const Divider(color: Color(0xFF0A0A0F), height: 1),
+              Container(height: 1, color: Colors.white.withOpacity(0.04)),
               _menuOption(
                 icon: Icons.edit_rounded,
                 label: 'Edit',
+                accent: accent,
                 onTap: () {
                   Navigator.pop(ctx);
                   onEdit?.call();
                 },
               ),
             ],
-            const Divider(color: Color(0xFF0A0A0F), height: 1),
+            Container(height: 1, color: Colors.white.withOpacity(0.04)),
             _menuOption(
               icon: Icons.delete_outline_rounded,
               label: 'Delete',
+              accent: Colors.red.shade400,
               onTap: () {
                 Navigator.pop(ctx);
                 onDelete?.call();
               },
             ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -249,6 +255,7 @@ class ChatBubble extends StatelessWidget {
   Widget _menuOption({
     required IconData icon,
     required String label,
+    required Color accent,
     required VoidCallback onTap,
   }) {
     return GestureDetector(
@@ -257,7 +264,7 @@ class ChatBubble extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
         child: Row(
           children: [
-            Icon(icon, size: 20, color: Colors.white.withOpacity(0.6)),
+            Icon(icon, size: 20, color: accent),
             const SizedBox(width: 14),
             Text(
               label,
@@ -276,8 +283,8 @@ class ChatBubble extends StatelessWidget {
   String _formatTime(DateTime timestamp) {
     final now = DateTime.now();
     final diff = now.difference(timestamp);
-    if (diff.inMinutes < 1) return 'Just now';
-    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+    if (diff.inMinutes < 1) return 'now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m';
     final hour = timestamp.hour > 12 ? timestamp.hour - 12 : (timestamp.hour == 0 ? 12 : timestamp.hour);
     final ampm = timestamp.hour >= 12 ? 'PM' : 'AM';
     final min = timestamp.minute.toString().padLeft(2, '0');
@@ -287,24 +294,20 @@ class ChatBubble extends StatelessWidget {
 
   Widget _buildAvatar(Color accent, bool isUser) {
     return Container(
-      width: 30,
-      height: 30,
+      width: 28,
+      height: 28,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: isUser
-            ? LinearGradient(
-                colors: [accent, accent.withOpacity(0.6)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : LinearGradient(
-                colors: [const Color(0xFF7C4DFF), const Color(0xFF448AFF)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+        gradient: LinearGradient(
+          colors: isUser
+              ? [accent, accent.withOpacity(0.6)]
+              : [const Color(0xFF7C4DFF), const Color(0xFF448AFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         boxShadow: [
           BoxShadow(
-            color: (isUser ? accent : const Color(0xFF7C4DFF)).withOpacity(0.3),
+            color: (isUser ? accent : const Color(0xFF7C4DFF)).withOpacity(0.25),
             blurRadius: 6,
           ),
         ],
@@ -312,7 +315,7 @@ class ChatBubble extends StatelessWidget {
       child: Center(
         child: Icon(
           isUser ? Icons.person : Icons.auto_awesome,
-          size: 15,
+          size: 14,
           color: Colors.white.withOpacity(0.9),
         ),
       ),
@@ -350,8 +353,7 @@ class ChatBubble extends StatelessWidget {
                 onRetry!();
               },
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: accent.withOpacity(0.5)),
@@ -577,6 +579,51 @@ class ChatBubble extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ActionIcon extends StatelessWidget {
+  final IconData icon;
+  final double size;
+  final String? label;
+  final Color? color;
+  final Color? activeColor;
+  final VoidCallback? onTap;
+
+  const _ActionIcon({
+    required this.icon,
+    this.size = 11,
+    this.label,
+    this.color,
+    this.activeColor,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveColor = color ?? Colors.white.withOpacity(0.15);
+    if (label != null) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: size, color: effectiveColor),
+          const SizedBox(width: 3),
+          Text(
+            label!,
+            style: TextStyle(
+              color: effectiveColor,
+              fontSize: 10,
+              fontFamily: 'Inter',
+            ),
+          ),
+        ],
+      );
+    }
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Icon(icon, size: size, color: effectiveColor),
     );
   }
 }

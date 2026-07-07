@@ -1,13 +1,14 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/settings_provider.dart';
 
 class GradientMeshBackground extends StatefulWidget {
   final Widget child;
   const GradientMeshBackground({super.key, required this.child});
 
   @override
-  State<GradientMeshBackground> createState() =>
-      _GradientMeshBackgroundState();
+  State<GradientMeshBackground> createState() => _GradientMeshBackgroundState();
 }
 
 class _GradientMeshBackgroundState extends State<GradientMeshBackground>
@@ -19,7 +20,7 @@ class _GradientMeshBackgroundState extends State<GradientMeshBackground>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 20),
+      duration: const Duration(seconds: 25),
     )..repeat();
   }
 
@@ -31,11 +32,12 @@ class _GradientMeshBackgroundState extends State<GradientMeshBackground>
 
   @override
   Widget build(BuildContext context) {
+    final accent = context.watch<SettingsProvider>().accentColor;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
         return CustomPaint(
-          painter: _MeshPainter(_controller.value),
+          painter: _MeshPainter(_controller.value, accent),
           child: SizedBox(
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height,
@@ -50,37 +52,40 @@ class _GradientMeshBackgroundState extends State<GradientMeshBackground>
 
 class _MeshPainter extends CustomPainter {
   final double progress;
+  final Color accent;
 
-  _MeshPainter(this.progress);
+  _MeshPainter(this.progress, this.accent);
 
   @override
   void paint(Canvas canvas, Size size) {
     final t = progress * 2 * pi;
 
-    // Base dark fill
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width, size.height),
       Paint()..color = const Color(0xFF0A0A0F),
     );
 
-    // Large ambient gradient blobs
-    _drawBlob(canvas, size, const Color(0xFF7C4DFF), 0.12,
+    final secondary = accent.computeLuminance() > 0.5
+        ? accent.withOpacity(0.6)
+        : const Color(0xFF448AFF);
+
+    _drawBlob(canvas, size, accent, 0.14,
       Offset(
         size.width * (0.3 + 0.2 * sin(t)),
         size.height * (0.2 + 0.15 * cos(t * 0.85)),
       ),
-      size.width * 0.6,
+      size.width * 0.55,
     );
 
-    _drawBlob(canvas, size, const Color(0xFF448AFF), 0.10,
+    _drawBlob(canvas, size, secondary, 0.10,
       Offset(
         size.width * (0.7 + 0.15 * cos(t * 0.65)),
         size.height * (0.8 + 0.1 * sin(t * 0.95)),
       ),
-      size.width * 0.45,
+      size.width * 0.4,
     );
 
-    _drawBlob(canvas, size, const Color(0xFF1A0A3E), 0.18,
+    _drawBlob(canvas, size, const Color(0xFF1A0A3E), 0.2,
       Offset(
         size.width * (0.5 + 0.2 * sin(t * 1.15 + 1)),
         size.height * (0.5 + 0.2 * cos(t * 0.75 + 1)),
@@ -88,21 +93,20 @@ class _MeshPainter extends CustomPainter {
       size.width * 0.5,
     );
 
-    // Floating glow orbs
-    _drawOrb(canvas, size, const Color(0xFF7C4DFF), 0.08,
+    _drawOrb(canvas, size, accent, 0.09,
       Offset(
         size.width * (0.15 + 0.12 * sin(t * 0.7 + 0.3)),
         size.height * (0.3 + 0.1 * cos(t * 0.5 + 1.2)),
       ),
-      size.width * 0.08,
+      size.width * 0.07,
     );
 
-    _drawOrb(canvas, size, const Color(0xFF448AFF), 0.06,
+    _drawOrb(canvas, size, secondary, 0.07,
       Offset(
         size.width * (0.85 + 0.1 * sin(t * 0.9 + 2.1)),
         size.height * (0.7 + 0.12 * cos(t * 0.6 + 0.8)),
       ),
-      size.width * 0.06,
+      size.width * 0.05,
     );
 
     _drawOrb(canvas, size, const Color(0xFFE040FB), 0.05,
@@ -110,7 +114,7 @@ class _MeshPainter extends CustomPainter {
         size.width * (0.4 + 0.15 * sin(t * 0.55 + 4.2)),
         size.height * (0.15 + 0.1 * cos(t * 0.8 + 3.5)),
       ),
-      size.width * 0.04,
+      size.width * 0.035,
     );
 
     _drawOrb(canvas, size, const Color(0xFF00BCD4), 0.05,
@@ -118,7 +122,7 @@ class _MeshPainter extends CustomPainter {
         size.width * (0.6 + 0.12 * sin(t * 0.75 + 1.8)),
         size.height * (0.85 + 0.08 * cos(t * 0.45 + 2.7)),
       ),
-      size.width * 0.05,
+      size.width * 0.045,
     );
   }
 
@@ -146,5 +150,5 @@ class _MeshPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_MeshPainter oldDelegate) =>
-      oldDelegate.progress != progress;
+      oldDelegate.progress != progress || oldDelegate.accent != accent;
 }

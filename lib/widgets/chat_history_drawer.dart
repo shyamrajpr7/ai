@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../models/chat_conversation.dart';
 import '../providers/chat_provider.dart';
+import '../providers/settings_provider.dart';
 import '../screens/diary_screen.dart';
 import '../screens/archaeology_screen.dart';
 import '../screens/gallery_screen.dart';
@@ -23,7 +25,7 @@ class ChatHistoryDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = const Color(0xFF7C4DFF);
+    final accent = context.watch<SettingsProvider>().accentColor;
 
     return Drawer(
       backgroundColor: const Color(0xFF0A0A0F),
@@ -38,111 +40,10 @@ class ChatHistoryDrawer extends StatelessWidget {
         ),
         child: Column(
           children: [
-            ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                child: Container(
-                  padding: EdgeInsets.only(
-                    top: MediaQuery.of(context).padding.top + 16,
-                    left: 20,
-                    right: 16,
-                    bottom: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(
-                        color: Colors.white.withOpacity(0.06),
-                      ),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF7C4DFF), Color(0xFF448AFF)],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF7C4DFF).withOpacity(0.3),
-                              blurRadius: 8,
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.auto_awesome,
-                            size: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Nexus',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'SpaceGrotesk',
-                        ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: accent.withOpacity(0.3),
-                            width: 1,
-                          ),
-                        ),
-                        child: IconButton(
-                          icon: const Icon(Icons.add, color: Colors.white70),
-                          onPressed: () {
-                            provider.createConversation();
-                            Navigator.pop(context);
-                          },
-                          tooltip: 'New Chat',
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            _buildHeader(context, accent),
             Expanded(
               child: provider.conversations.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.chat_bubble_outline,
-                            size: 48,
-                            color: Colors.white.withOpacity(0.1),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'No conversations yet',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.3),
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'Tap + to start a new chat',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.2),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
+                  ? _buildEmptyConversations(accent)
                   : ListView.builder(
                       padding: const EdgeInsets.only(top: 8),
                       itemCount: provider.conversations.length,
@@ -153,6 +54,7 @@ class ChatHistoryDrawer extends StatelessWidget {
                         return _ConversationTile(
                           conversation: conv,
                           isSelected: isSelected,
+                          accent: accent,
                           onTap: () {
                             provider.selectConversation(conv.id);
                             Navigator.pop(context);
@@ -167,525 +69,245 @@ class ChatHistoryDrawer extends StatelessWidget {
                       },
                     ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                border: Border(
-                  top: BorderSide(
-                    color: Colors.white.withOpacity(0.05),
-                  ),
-                ),
-              ),
-              child: Column(
-                children: [
-                  ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withOpacity(0.12),
-                      ),
-                      child: Icon(
-                        Icons.explore_outlined,
-                        size: 16,
-                        color: accent.withOpacity(0.7),
-                      ),
-                    ),
-                    title: Text(
-                      'Archaeology',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Activity heatmap',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
-                        fontSize: 11,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ArchaeologyScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withOpacity(0.12),
-                      ),
-                      child: Icon(
-                        Icons.menu_book_rounded,
-                        size: 16,
-                        color: accent.withOpacity(0.7),
-                      ),
-                    ),
-                    title: Text(
-                      'Chat Diary',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const DiaryScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withOpacity(0.12),
-                      ),
-                      child: Icon(
-                        Icons.auto_awesome,
-                        size: 16,
-                        color: accent.withOpacity(0.7),
-                      ),
-                    ),
-                    title: Text(
-                      'Dreamscape Gallery',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Browse dreamscape art',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
-                        fontSize: 11,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const GalleryScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withOpacity(0.12),
-                      ),
-                      child: Icon(
-                        Icons.sports_kabaddi,
-                        size: 16,
-                        color: accent.withOpacity(0.7),
-                      ),
-                    ),
-                    title: Text(
-                      'Arena',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Compare models side-by-side',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
-                        fontSize: 11,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ArenaScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withOpacity(0.12),
-                      ),
-                      child: Icon(
-                        Icons.science_outlined,
-                        size: 16,
-                        color: accent.withOpacity(0.7),
-                      ),
-                    ),
-                    title: Text(
-                      'Cognitive Lab',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Telemetry & Prompt Studio',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
-                        fontSize: 11,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const CognitiveLabScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withOpacity(0.12),
-                      ),
-                      child: Icon(
-                        Icons.auto_awesome,
-                        size: 16,
-                        color: accent.withOpacity(0.7),
-                      ),
-                    ),
-                    title: Text(
-                      'Memory Core',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'AI memory constellation',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
-                        fontSize: 11,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MemoryConstellationScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withOpacity(0.12),
-                      ),
-                      child: Icon(
-                        Icons.hub_outlined,
-                        size: 16,
-                        color: accent.withOpacity(0.7),
-                      ),
-                    ),
-                    title: Text(
-                      'Synapse',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'AI-to-AI debate & collaboration',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
-                        fontSize: 11,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SynapseScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withOpacity(0.12),
-                      ),
-                      child: Icon(
-                        Icons.waves,
-                        size: 16,
-                        color: accent.withOpacity(0.7),
-                      ),
-                    ),
-                    title: Text(
-                      'Voice Hub',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Hands-free voice assistant',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
-                        fontSize: 11,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const VoiceHubScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withOpacity(0.12),
-                      ),
-                      child: Icon(
-                        Icons.dashboard_customize_outlined,
-                        size: 16,
-                        color: accent.withOpacity(0.7),
-                      ),
-                    ),
-                    title: Text(
-                      'Dream Canvas',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Infinite vision board',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
-                        fontSize: 11,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const DreamCanvasScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withOpacity(0.12),
-                      ),
-                      child: Icon(
-                        Icons.insights,
-                        size: 16,
-                        color: accent.withOpacity(0.7),
-                      ),
-                    ),
-                    title: Text(
-                      'Mood Analytics',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Sentiment, topics & cognitive map',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
-                        fontSize: 11,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const MoodDashboardScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withOpacity(0.12),
-                      ),
-                      child: Icon(
-                        Icons.auto_awesome,
-                        size: 16,
-                        color: accent.withOpacity(0.7),
-                      ),
-                    ),
-                    title: Text(
-                      'Agent Workspace',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Multi-step autonomous tasks',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
-                        fontSize: 11,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AgentWorkspaceScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  ListTile(
-                    dense: true,
-                    leading: Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: accent.withOpacity(0.12),
-                      ),
-                      child: Icon(
-                        Icons.account_tree_outlined,
-                        size: 16,
-                        color: accent.withOpacity(0.7),
-                      ),
-                    ),
-                    title: Text(
-                      'Time Machine',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    subtitle: Text(
-                      'Branching & version tree',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.3),
-                        fontSize: 11,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      final conv =
-                          provider.currentConversation;
-                      if (conv != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => TimeMachineScreen(
-                              conversation: conv,
-                              provider: provider,
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Text(
-                      'Nexus AI v1.0',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.2),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            _buildNavSection(context, accent),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildHeader(BuildContext context, Color accent) {
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top + 16,
+            left: 20,
+            right: 16,
+            bottom: 16,
+          ),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: Colors.white.withOpacity(0.06),
+              ),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7C4DFF), Color(0xFF448AFF)],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF7C4DFF).withOpacity(0.3),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.auto_awesome,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Nexus',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'SpaceGrotesk',
+                ),
+              ),
+              const Spacer(),
+              Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: accent.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.add, color: Colors.white70),
+                  onPressed: () {
+                    provider.createConversation();
+                    Navigator.pop(context);
+                  },
+                  tooltip: 'New Chat',
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyConversations(Color accent) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 40,
+            color: Colors.white.withOpacity(0.1),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No conversations yet',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.3),
+              fontSize: 14,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Tap + to start a new chat',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.2),
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavSection(BuildContext context, Color accent) {
+    final navItems = [
+      _NavItem('Chat Diary', Icons.menu_book_rounded, 'Reflections & journal',
+          () => _navigate(context, const DiaryScreen())),
+      _NavItem('Archaeology', Icons.explore_outlined, 'Activity heatmap',
+          () => _navigate(context, const ArchaeologyScreen())),
+      _NavItem('Arena', Icons.sports_kabaddi, 'Compare models',
+          () => _navigate(context, const ArenaScreen())),
+      _NavItem('Synapse', Icons.hub_outlined, 'AI-to-AI debate',
+          () => _navigate(context, const SynapseScreen())),
+      _NavItem('Voice Hub', Icons.waves, 'Hands-free assistant',
+          () => _navigate(context, const VoiceHubScreen())),
+      _NavItem('Dream Canvas', Icons.dashboard_customize_outlined, 'Vision board',
+          () => _navigate(context, const DreamCanvasScreen())),
+      _NavItem('Memory Core', Icons.auto_awesome, 'Constellation',
+          () => _navigate(context, const MemoryConstellationScreen())),
+      _NavItem('Dreamscape', Icons.auto_awesome, 'Art gallery',
+          () => _navigate(context, const GalleryScreen())),
+      _NavItem('Cognitive Lab', Icons.science_outlined, 'Prompt studio',
+          () => _navigate(context, const CognitiveLabScreen())),
+      _NavItem('Mood Analytics', Icons.insights, 'Sentiment & topics',
+          () => _navigate(context, const MoodDashboardScreen())),
+      _NavItem('Agent Workspace', Icons.auto_awesome, 'Autonomous tasks',
+          () => _navigate(context, const AgentWorkspaceScreen())),
+      _NavItem('Time Machine', Icons.account_tree_outlined, 'Branching & tree',
+          () {
+        final conv = provider.currentConversation;
+        if (conv != null) {
+          Navigator.pop(context);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => TimeMachineScreen(
+                conversation: conv,
+                provider: provider,
+              ),
+            ),
+          );
+        }
+      }),
+    ];
+
+    return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.45,
+      ),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(color: Colors.white.withOpacity(0.05)),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Row(
+              children: [
+                Text(
+                  'EXPLORE',
+                  style: TextStyle(
+                    color: accent.withOpacity(0.5),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.2,
+                    fontFamily: 'SpaceGrotesk',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Flexible(
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 4),
+              shrinkWrap: true,
+              children: navItems.asMap().entries.map((entry) {
+                final i = entry.key;
+                final item = entry.value;
+                final icons = [
+                  Icons.menu_book_rounded,
+                  Icons.explore_outlined,
+                  Icons.sports_kabaddi,
+                  Icons.hub_outlined,
+                  Icons.waves,
+                  Icons.dashboard_customize_outlined,
+                  Icons.auto_awesome,
+                  Icons.auto_awesome,
+                  Icons.science_outlined,
+                  Icons.insights,
+                  Icons.auto_awesome,
+                  Icons.account_tree_outlined,
+                ];
+                return _NavItemTile(
+                  icon: icons[i],
+                  label: item.label,
+                  subtitle: item.subtitle,
+                  accent: accent,
+                  onTap: item.onTap,
+                );
+              }).toList(),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12, top: 4),
+            child: Text(
+              'Nexus AI v1.0',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.2),
+                fontSize: 11,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigate(BuildContext context, Widget screen) {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => screen),
     );
   }
 
@@ -695,13 +317,12 @@ class ChatHistoryDrawer extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A2E),
+        backgroundColor: const Color(0xFF12121A),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         title: const Text(
           'Rename Chat',
-          style: TextStyle(color: Colors.white, fontFamily: 'SpaceGrotesk'),
         ),
         content: TextField(
           controller: controller,
@@ -709,17 +330,6 @@ class ChatHistoryDrawer extends StatelessWidget {
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
             hintText: 'Enter new name',
-            hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide:
-                  BorderSide(color: Colors.white.withOpacity(0.1)),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(
-                  color: Color(0xFF7C4DFF)),
-            ),
           ),
         ),
         actions: [
@@ -748,9 +358,74 @@ class ChatHistoryDrawer extends StatelessWidget {
   }
 }
 
+class _NavItem {
+  final String label;
+  final IconData icon;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  _NavItem(this.label, this.icon, this.subtitle, this.onTap);
+}
+
+class _NavItemTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String subtitle;
+  final Color accent;
+  final VoidCallback onTap;
+
+  const _NavItemTile({
+    required this.icon,
+    required this.label,
+    required this.subtitle,
+    required this.accent,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      dense: true,
+      leading: Container(
+        width: 32,
+        height: 32,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: accent.withOpacity(0.12),
+        ),
+        child: Icon(
+          icon,
+          size: 16,
+          color: accent.withOpacity(0.7),
+        ),
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.7),
+          fontSize: 13,
+          fontFamily: 'Inter',
+          fontWeight: FontWeight.w500,
+        ),
+      ),
+      subtitle: subtitle.isNotEmpty
+          ? Text(
+              subtitle,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.25),
+                fontSize: 10,
+              ),
+            )
+          : null,
+      onTap: onTap,
+    );
+  }
+}
+
 class _ConversationTile extends StatelessWidget {
   final ChatConversation conversation;
   final bool isSelected;
+  final Color accent;
   final VoidCallback onTap;
   final VoidCallback onDelete;
   final VoidCallback onRename;
@@ -758,6 +433,7 @@ class _ConversationTile extends StatelessWidget {
   const _ConversationTile({
     required this.conversation,
     required this.isSelected,
+    required this.accent,
     required this.onTap,
     required this.onDelete,
     required this.onRename,
@@ -765,7 +441,6 @@ class _ConversationTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = const Color(0xFF7C4DFF);
     final preview = conversation.messages.isNotEmpty
         ? conversation.messages.last.content
         : 'Empty conversation';
