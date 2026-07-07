@@ -6,6 +6,8 @@ import '../models/memory_node.dart';
 import '../models/canvas_project.dart';
 import '../models/mood_analytics.dart';
 import '../models/saved_prompt.dart';
+import '../models/flash_card.dart';
+import '../models/ritual.dart';
 
 class HiveService {
   static const _boxName = 'ai_chat_app';
@@ -17,6 +19,8 @@ class HiveService {
   static const _moodKey = 'mood_entries';
   static const _promptKey = 'saved_prompts';
   static const _graphKey = 'knowledge_graph';
+  static const _flashCardKey = 'flash_cards';
+  static const _ritualKey = 'rituals';
 
   late Box _box;
 
@@ -99,6 +103,34 @@ class HiveService {
     final raw = _box.get(_graphKey);
     if (raw == null) return null;
     return jsonDecode(raw) as Map<String, dynamic>;
+  }
+
+  Future<void> saveFlashCards(List<FlashCard> cards) async {
+    final data = cards.map((c) => c.toJson()).toList();
+    await _box.put(_flashCardKey, jsonEncode(data));
+  }
+
+  List<FlashCard> loadFlashCards() {
+    final raw = _box.get(_flashCardKey);
+    if (raw == null) return [];
+    final list = jsonDecode(raw) as List;
+    return list
+        .map((e) => FlashCard.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> saveRituals(List<Ritual> rituals) async {
+    final data = rituals.map((r) => r.toJson()).toList();
+    await _box.put(_ritualKey, jsonEncode(data));
+  }
+
+  List<Ritual> loadRituals() {
+    final raw = _box.get(_ritualKey);
+    if (raw == null) return [];
+    final list = jsonDecode(raw) as List;
+    return list
+        .map((e) => Ritual.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<void> clearAll() async {

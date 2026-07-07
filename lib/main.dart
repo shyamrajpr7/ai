@@ -10,6 +10,8 @@ import 'providers/agent_provider.dart';
 import 'providers/prompt_vault_provider.dart';
 import 'providers/knowledge_graph_provider.dart';
 import 'providers/code_studio_provider.dart';
+import 'providers/ritual_provider.dart';
+import 'providers/chat_export_provider.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -42,6 +44,11 @@ void main() async {
 
   final codeStudioProvider = CodeStudioProvider(chatProvider);
 
+  final ritualProvider = RitualProvider(hiveService, chatProvider);
+  await ritualProvider.load();
+
+  final chatExportProvider = ChatExportProvider(chatProvider);
+
   runApp(
     MultiProvider(
       providers: [
@@ -53,6 +60,8 @@ void main() async {
         ChangeNotifierProvider.value(value: promptVaultProvider),
         ChangeNotifierProvider.value(value: knowledgeGraphProvider),
         ChangeNotifierProvider.value(value: codeStudioProvider),
+        ChangeNotifierProvider.value(value: ritualProvider),
+        ChangeNotifierProvider.value(value: chatExportProvider),
       ],
       child: const NexusApp(),
     ),

@@ -21,6 +21,8 @@ import '../screens/prompt_vault_screen.dart';
 import '../screens/knowledge_graph_screen.dart';
 import '../screens/code_studio_screen.dart';
 import '../screens/persona_forge_screen.dart';
+import '../screens/ritual_engine_screen.dart';
+import '../screens/chat_export_studio_screen.dart';
 
 class ChatHistoryDrawer extends StatelessWidget {
   final ChatProvider provider;
@@ -207,6 +209,10 @@ class ChatHistoryDrawer extends StatelessWidget {
           () => _navigate(context, const CodeStudioScreen())),
       _NavItem('Persona Forge', Icons.face_rounded, 'Create & customize personas',
           () => _navigate(context, const PersonaForgeScreen())),
+      _NavItem('Ritual Engine', Icons.self_improvement, 'Daily challenges & habits',
+          () => _navigate(context, const RitualEngineScreen())),
+      _NavItem('Export Studio', Icons.file_download_rounded, 'Export chats as PDF, Markdown & themes',
+          () => _navigate(context, const ChatExportStudioScreen())),
       _NavItem('Voice Hub', Icons.waves, 'Hands-free assistant',
           () => _navigate(context, const VoiceHubScreen())),
       _NavItem('Dream Canvas', Icons.dashboard_customize_outlined, 'Vision board',
@@ -284,6 +290,8 @@ class ChatHistoryDrawer extends StatelessWidget {
                   Icons.scatter_plot_rounded,
                   Icons.code_rounded,
                   Icons.face_rounded,
+                  Icons.self_improvement,
+                  Icons.file_download_rounded,
                   Icons.waves,
                   Icons.dashboard_customize_outlined,
                   Icons.auto_awesome,
