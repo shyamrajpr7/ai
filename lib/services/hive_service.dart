@@ -16,6 +16,7 @@ class HiveService {
   static const _canvasKey = 'canvas_projects';
   static const _moodKey = 'mood_entries';
   static const _promptKey = 'saved_prompts';
+  static const _graphKey = 'knowledge_graph';
 
   late Box _box;
 
@@ -88,6 +89,16 @@ class HiveService {
     return list
         .map((e) => SavedPrompt.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<void> saveKnowledgeGraph(Map<String, dynamic> data) async {
+    await _box.put(_graphKey, jsonEncode(data));
+  }
+
+  Map<String, dynamic>? loadKnowledgeGraph() {
+    final raw = _box.get(_graphKey);
+    if (raw == null) return null;
+    return jsonDecode(raw) as Map<String, dynamic>;
   }
 
   Future<void> clearAll() async {

@@ -19,6 +19,7 @@ import '../services/image_gen_service.dart';
 import '../services/video_gen_service.dart';
 import '../services/hive_service.dart';
 import 'settings_provider.dart';
+import 'knowledge_graph_provider.dart';
 
 const _uuid = Uuid();
 
@@ -74,6 +75,7 @@ class ArenaResult {
 class ChatProvider extends ChangeNotifier {
   final HiveService _hiveService;
   final SettingsProvider _settingsProvider;
+  final KnowledgeGraphProvider _knowledgeGraphProvider;
 
   List<ChatConversation> _conversations = [];
   String? _currentConversationId;
@@ -94,7 +96,7 @@ class ChatProvider extends ChangeNotifier {
     return idx != -1 ? _conversations[idx] : null;
   }
 
-  ChatProvider(this._hiveService, this._settingsProvider);
+  ChatProvider(this._hiveService, this._settingsProvider, this._knowledgeGraphProvider);
 
   Future<void> load() async {
     _conversations = _hiveService.loadConversations();
@@ -232,6 +234,8 @@ class ChatProvider extends ChangeNotifier {
           conv.title =
               text.length > 30 ? '${text.substring(0, 27)}...' : text;
         }
+
+        _knowledgeGraphProvider.extractFromMessages([assistantMsg]);
       }
 
       _isProcessing = false;

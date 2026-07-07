@@ -8,6 +8,7 @@ import 'providers/canvas_provider.dart';
 import 'providers/mood_provider.dart';
 import 'providers/agent_provider.dart';
 import 'providers/prompt_vault_provider.dart';
+import 'providers/knowledge_graph_provider.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -21,7 +22,10 @@ void main() async {
   final settingsProvider = SettingsProvider(hiveService);
   await settingsProvider.load();
 
-  final chatProvider = ChatProvider(hiveService, settingsProvider);
+  final knowledgeGraphProvider = KnowledgeGraphProvider(hiveService);
+  await knowledgeGraphProvider.load();
+
+  final chatProvider = ChatProvider(hiveService, settingsProvider, knowledgeGraphProvider);
   await chatProvider.load();
 
   final canvasProvider = CanvasProvider(hiveService);
@@ -44,6 +48,7 @@ void main() async {
         ChangeNotifierProvider.value(value: moodProvider),
         ChangeNotifierProvider.value(value: agentProvider),
         ChangeNotifierProvider.value(value: promptVaultProvider),
+        ChangeNotifierProvider.value(value: knowledgeGraphProvider),
       ],
       child: const NexusApp(),
     ),
