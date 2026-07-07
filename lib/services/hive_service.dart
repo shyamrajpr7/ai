@@ -5,6 +5,7 @@ import '../models/diary_entry.dart';
 import '../models/memory_node.dart';
 import '../models/canvas_project.dart';
 import '../models/mood_analytics.dart';
+import '../models/saved_prompt.dart';
 
 class HiveService {
   static const _boxName = 'ai_chat_app';
@@ -14,6 +15,7 @@ class HiveService {
   static const _memoryKey = 'memories';
   static const _canvasKey = 'canvas_projects';
   static const _moodKey = 'mood_entries';
+  static const _promptKey = 'saved_prompts';
 
   late Box _box;
 
@@ -71,6 +73,20 @@ class HiveService {
     final list = jsonDecode(raw) as List;
     return list
         .map((e) => MemoryNode.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> savePrompts(List<SavedPrompt> prompts) async {
+    final data = prompts.map((p) => p.toJson()).toList();
+    await _box.put(_promptKey, jsonEncode(data));
+  }
+
+  List<SavedPrompt> loadPrompts() {
+    final raw = _box.get(_promptKey);
+    if (raw == null) return [];
+    final list = jsonDecode(raw) as List;
+    return list
+        .map((e) => SavedPrompt.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

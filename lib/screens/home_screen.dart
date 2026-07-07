@@ -13,6 +13,7 @@ import '../widgets/chat_history_drawer.dart';
 import '../models/chat_message.dart';
 import 'settings_screen.dart';
 import 'time_machine_screen.dart';
+import 'prompt_vault_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -429,6 +430,22 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showPromptVault(BuildContext buildContext) {
+    HapticFeedback.lightImpact();
+    Navigator.push(
+      buildContext,
+      MaterialPageRoute(
+        builder: (_) => PromptVaultScreen(
+          pickerMode: true,
+          onPromptPicked: (content) {
+            _textController.text = content;
+            _focusNode.requestFocus();
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final accent = context.watch<SettingsProvider>().accentColor;
@@ -658,6 +675,16 @@ class _HomeScreenState extends State<HomeScreen> {
                         provider.createConversation();
                       },
                       tooltip: 'New Chat',
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.bookmark_outline_rounded,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                      onPressed: () {
+                        _showPromptVault(context);
+                      },
+                      tooltip: 'Prompt Vault',
                     ),
                     IconButton(
                       icon: Icon(

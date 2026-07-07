@@ -8,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import '../models/chat_message.dart';
+import '../providers/prompt_vault_provider.dart';
 import '../providers/settings_provider.dart';
 import '../services/tts_service.dart';
 import 'glow_text.dart';
@@ -237,6 +238,16 @@ class ChatBubble extends StatelessWidget {
             ],
             Container(height: 1, color: Colors.white.withOpacity(0.04)),
             _menuOption(
+              icon: Icons.bookmark_outline_rounded,
+              label: 'Save as Prompt',
+              accent: accent,
+              onTap: () {
+                Navigator.pop(ctx);
+                _showSavePromptDialog(context, accent);
+              },
+            ),
+            Container(height: 1, color: Colors.white.withOpacity(0.04)),
+            _menuOption(
               icon: Icons.delete_outline_rounded,
               label: 'Delete',
               accent: Colors.red.shade400,
@@ -276,6 +287,75 @@ class ChatBubble extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showSavePromptDialog(BuildContext context, Color accent) {
+    final titleController = TextEditingController();
+    final tagsController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF12121A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text(
+          'Save as Prompt',
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: titleController,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Prompt title...',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: tagsController,
+              style: const TextStyle(color: Colors.white, fontSize: 14),
+              decoration: InputDecoration(
+                hintText: 'Tags (comma separated)...',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: Colors.white.withOpacity(0.5)),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              final title = titleController.text.trim();
+              if (title.isEmpty) return;
+              final tags = tagsController.text
+                  .split(',')
+                  .map((t) => t.trim())
+                  .where((t) => t.isNotEmpty)
+                  .toList();
+              context.read<PromptVaultProvider>().addPrompt(
+                title: title,
+                content: message.content,
+                tags: tags,
+              );
+              Navigator.pop(ctx);
+              HapticFeedback.lightImpact();
+            },
+            child: const Text(
+              'Save',
+              style: TextStyle(color: Color(0xFF7C4DFF)),
+            ),
+          ),
+        ],
       ),
     );
   }

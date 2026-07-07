@@ -17,6 +17,7 @@ import '../screens/time_machine_screen.dart';
 import '../screens/dream_canvas_screen.dart';
 import '../screens/mood_dashboard_screen.dart';
 import '../screens/agent_workspace_screen.dart';
+import '../screens/prompt_vault_screen.dart';
 
 class ChatHistoryDrawer extends StatelessWidget {
   final ChatProvider provider;
@@ -189,6 +190,8 @@ class ChatHistoryDrawer extends StatelessWidget {
     final navItems = [
       _NavItem('Chat Diary', Icons.menu_book_rounded, 'Reflections & journal',
           () => _navigate(context, const DiaryScreen())),
+      _NavItem('Prompt Vault', Icons.bookmark_outline_rounded, 'Save & reuse prompts',
+          () => _navigate(context, const PromptVaultScreen())),
       _NavItem('Archaeology', Icons.explore_outlined, 'Activity heatmap',
           () => _navigate(context, const ArchaeologyScreen())),
       _NavItem('Arena', Icons.sports_kabaddi, 'Compare models',
@@ -265,6 +268,7 @@ class ChatHistoryDrawer extends StatelessWidget {
                 final item = entry.value;
                 final icons = [
                   Icons.menu_book_rounded,
+                  Icons.bookmark_outline_rounded,
                   Icons.explore_outlined,
                   Icons.sports_kabaddi,
                   Icons.hub_outlined,
