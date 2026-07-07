@@ -14,6 +14,7 @@ import '../models/chat_message.dart';
 import 'settings_screen.dart';
 import 'time_machine_screen.dart';
 import 'prompt_vault_screen.dart';
+import 'persona_forge_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -175,6 +176,41 @@ class _HomeScreenState extends State<HomeScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
+                          builder: (_) => const PersonaForgeScreen(),
+                        ),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: accent.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.auto_awesome, size: 12, color: accent),
+                          const SizedBox(width: 4),
+                          Text(
+                            'Forge',
+                            style: TextStyle(
+                              color: accent,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
                           builder: (_) => const SettingsScreen(),
                         ),
                       );
@@ -183,18 +219,19 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: accent.withOpacity(0.12),
+                        color: Colors.white.withOpacity(0.06),
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.tune, size: 14, color: accent),
+                          Icon(Icons.tune, size: 12,
+                              color: Colors.white.withOpacity(0.5)),
                           const SizedBox(width: 4),
                           Text(
                             'Manage',
                             style: TextStyle(
-                              color: accent,
+                              color: Colors.white.withOpacity(0.5),
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
                             ),

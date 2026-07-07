@@ -20,6 +20,7 @@ import '../screens/agent_workspace_screen.dart';
 import '../screens/prompt_vault_screen.dart';
 import '../screens/knowledge_graph_screen.dart';
 import '../screens/code_studio_screen.dart';
+import '../screens/persona_forge_screen.dart';
 
 class ChatHistoryDrawer extends StatelessWidget {
   final ChatProvider provider;
@@ -204,6 +205,8 @@ class ChatHistoryDrawer extends StatelessWidget {
           () => _navigate(context, const KnowledgeGraphScreen())),
       _NavItem('Code Studio', Icons.code_rounded, 'AI code editor & fixer',
           () => _navigate(context, const CodeStudioScreen())),
+      _NavItem('Persona Forge', Icons.face_rounded, 'Create & customize personas',
+          () => _navigate(context, const PersonaForgeScreen())),
       _NavItem('Voice Hub', Icons.waves, 'Hands-free assistant',
           () => _navigate(context, const VoiceHubScreen())),
       _NavItem('Dream Canvas', Icons.dashboard_customize_outlined, 'Vision board',
@@ -280,6 +283,7 @@ class ChatHistoryDrawer extends StatelessWidget {
                   Icons.hub_outlined,
                   Icons.scatter_plot_rounded,
                   Icons.code_rounded,
+                  Icons.face_rounded,
                   Icons.waves,
                   Icons.dashboard_customize_outlined,
                   Icons.auto_awesome,
