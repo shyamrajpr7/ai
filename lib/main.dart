@@ -9,6 +9,7 @@ import 'providers/mood_provider.dart';
 import 'providers/agent_provider.dart';
 import 'providers/prompt_vault_provider.dart';
 import 'providers/knowledge_graph_provider.dart';
+import 'providers/code_studio_provider.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -39,6 +40,8 @@ void main() async {
   final promptVaultProvider = PromptVaultProvider(hiveService);
   await promptVaultProvider.load();
 
+  final codeStudioProvider = CodeStudioProvider(chatProvider);
+
   runApp(
     MultiProvider(
       providers: [
@@ -49,6 +52,7 @@ void main() async {
         ChangeNotifierProvider.value(value: agentProvider),
         ChangeNotifierProvider.value(value: promptVaultProvider),
         ChangeNotifierProvider.value(value: knowledgeGraphProvider),
+        ChangeNotifierProvider.value(value: codeStudioProvider),
       ],
       child: const NexusApp(),
     ),

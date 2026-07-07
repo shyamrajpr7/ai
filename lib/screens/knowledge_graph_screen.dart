@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/knowledge_graph.dart';
+import '../models/chat_message.dart';
 import '../providers/knowledge_graph_provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/settings_provider.dart';

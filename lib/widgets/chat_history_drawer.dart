@@ -19,6 +19,7 @@ import '../screens/mood_dashboard_screen.dart';
 import '../screens/agent_workspace_screen.dart';
 import '../screens/prompt_vault_screen.dart';
 import '../screens/knowledge_graph_screen.dart';
+import '../screens/code_studio_screen.dart';
 
 class ChatHistoryDrawer extends StatelessWidget {
   final ChatProvider provider;
@@ -201,6 +202,8 @@ class ChatHistoryDrawer extends StatelessWidget {
           () => _navigate(context, const SynapseScreen())),
       _NavItem('Knowledge Graph', Icons.scatter_plot_rounded, 'Topics & concepts',
           () => _navigate(context, const KnowledgeGraphScreen())),
+      _NavItem('Code Studio', Icons.code_rounded, 'AI code editor & fixer',
+          () => _navigate(context, const CodeStudioScreen())),
       _NavItem('Voice Hub', Icons.waves, 'Hands-free assistant',
           () => _navigate(context, const VoiceHubScreen())),
       _NavItem('Dream Canvas', Icons.dashboard_customize_outlined, 'Vision board',
@@ -276,6 +279,7 @@ class ChatHistoryDrawer extends StatelessWidget {
                   Icons.sports_kabaddi,
                   Icons.hub_outlined,
                   Icons.scatter_plot_rounded,
+                  Icons.code_rounded,
                   Icons.waves,
                   Icons.dashboard_customize_outlined,
                   Icons.auto_awesome,
