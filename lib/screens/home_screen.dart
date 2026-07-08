@@ -20,6 +20,7 @@ import 'cognitive_lab_screen.dart';
 import 'debate_club_screen.dart';
 import 'document_oracle_screen.dart';
 import 'habit_tracker_screen.dart';
+import 'language_dojo_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -807,6 +808,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                       tooltip: 'Habit Tracker',
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.translate,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LanguageDojoScreen(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Language Dojo',
                     ),
                     IconButton(
                       icon: Icon(
