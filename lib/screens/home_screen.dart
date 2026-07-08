@@ -18,6 +18,7 @@ import 'persona_forge_screen.dart';
 import 'arena_screen.dart';
 import 'cognitive_lab_screen.dart';
 import 'debate_club_screen.dart';
+import 'document_oracle_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -773,6 +774,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                       tooltip: 'Debate Club',
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.menu_book,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const DocumentOracleScreen(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Document Oracle',
                     ),
                     IconButton(
                       icon: Icon(

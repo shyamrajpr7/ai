@@ -12,6 +12,8 @@ import 'providers/knowledge_graph_provider.dart';
 import 'providers/code_studio_provider.dart';
 import 'providers/ritual_provider.dart';
 import 'providers/chat_export_provider.dart';
+import 'providers/context_weaver_provider.dart';
+import 'providers/document_oracle_provider.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -28,7 +30,10 @@ void main() async {
   final knowledgeGraphProvider = KnowledgeGraphProvider(hiveService);
   await knowledgeGraphProvider.load();
 
-  final chatProvider = ChatProvider(hiveService, settingsProvider, knowledgeGraphProvider);
+  final contextWeaverProvider = ContextWeaverProvider(hiveService);
+  await contextWeaverProvider.load();
+
+  final chatProvider = ChatProvider(hiveService, settingsProvider, knowledgeGraphProvider, contextWeaverProvider: contextWeaverProvider);
   await chatProvider.load();
 
   final canvasProvider = CanvasProvider(hiveService);
@@ -49,6 +54,8 @@ void main() async {
 
   final chatExportProvider = ChatExportProvider(chatProvider);
 
+  final documentOracleProvider = DocumentOracleProvider(settingsProvider);
+
   runApp(
     MultiProvider(
       providers: [
@@ -62,6 +69,8 @@ void main() async {
         ChangeNotifierProvider.value(value: codeStudioProvider),
         ChangeNotifierProvider.value(value: ritualProvider),
         ChangeNotifierProvider.value(value: chatExportProvider),
+        ChangeNotifierProvider.value(value: contextWeaverProvider),
+        ChangeNotifierProvider.value(value: documentOracleProvider),
       ],
       child: const NexusApp(),
     ),
