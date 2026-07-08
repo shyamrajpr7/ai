@@ -16,6 +16,7 @@ import 'providers/context_weaver_provider.dart';
 import 'providers/document_oracle_provider.dart';
 import 'providers/habit_provider.dart';
 import 'providers/language_dojo_provider.dart';
+import 'providers/story_forge_provider.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -63,6 +64,8 @@ void main() async {
 
   final languageDojoProvider = LanguageDojoProvider(settingsProvider);
 
+  final storyForgeProvider = StoryForgeProvider(settingsProvider);
+
   runApp(
     MultiProvider(
       providers: [
@@ -80,6 +83,7 @@ void main() async {
         ChangeNotifierProvider.value(value: documentOracleProvider),
         ChangeNotifierProvider.value(value: habitProvider),
         ChangeNotifierProvider.value(value: languageDojoProvider),
+        ChangeNotifierProvider.value(value: storyForgeProvider),
       ],
       child: const NexusApp(),
     ),

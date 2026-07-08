@@ -21,6 +21,7 @@ import 'debate_club_screen.dart';
 import 'document_oracle_screen.dart';
 import 'habit_tracker_screen.dart';
 import 'language_dojo_screen.dart';
+import 'story_forge_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -824,6 +825,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                       tooltip: 'Language Dojo',
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.auto_stories,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const StoryForgeScreen(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Story Forge',
                     ),
                     IconButton(
                       icon: Icon(
