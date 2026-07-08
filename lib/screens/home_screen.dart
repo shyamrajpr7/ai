@@ -15,6 +15,8 @@ import 'settings_screen.dart';
 import 'time_machine_screen.dart';
 import 'prompt_vault_screen.dart';
 import 'persona_forge_screen.dart';
+import 'arena_screen.dart';
+import 'cognitive_lab_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -722,6 +724,38 @@ class _HomeScreenState extends State<HomeScreen> {
                         _showPromptVault(context);
                       },
                       tooltip: 'Prompt Vault',
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.sports_kabaddi,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ArenaScreen(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Model Arena',
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.science_outlined,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CognitiveLabScreen(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Cognitive Lab',
                     ),
                     IconButton(
                       icon: Icon(
