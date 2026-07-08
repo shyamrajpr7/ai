@@ -23,6 +23,7 @@ import 'habit_tracker_screen.dart';
 import 'language_dojo_screen.dart';
 import 'story_forge_screen.dart';
 import 'emotion_mirror_screen.dart';
+import 'meeting_scribe_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -858,6 +859,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                       tooltip: 'Emotion Mirror',
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.record_voice_over,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MeetingScribeScreen(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Meeting Scribe',
                     ),
                     IconButton(
                       icon: Icon(
