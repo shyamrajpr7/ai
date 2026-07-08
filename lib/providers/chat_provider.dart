@@ -20,6 +20,7 @@ import '../services/video_gen_service.dart';
 import '../services/hive_service.dart';
 import 'settings_provider.dart';
 import 'knowledge_graph_provider.dart';
+import 'context_weaver_provider.dart';
 
 const _uuid = Uuid();
 
@@ -76,6 +77,7 @@ class ChatProvider extends ChangeNotifier {
   final HiveService _hiveService;
   final SettingsProvider _settingsProvider;
   final KnowledgeGraphProvider _knowledgeGraphProvider;
+  ContextWeaverProvider? _contextWeaverProvider;
 
   List<ChatConversation> _conversations = [];
   String? _currentConversationId;
@@ -96,7 +98,8 @@ class ChatProvider extends ChangeNotifier {
     return idx != -1 ? _conversations[idx] : null;
   }
 
-  ChatProvider(this._hiveService, this._settingsProvider, this._knowledgeGraphProvider);
+  ChatProvider(this._hiveService, this._settingsProvider, this._knowledgeGraphProvider, {ContextWeaverProvider? contextWeaverProvider})
+      : _contextWeaverProvider = contextWeaverProvider;
 
   Future<void> load() async {
     _conversations = _hiveService.loadConversations();
@@ -204,6 +207,15 @@ class ChatProvider extends ChangeNotifier {
       final memoryContext = _buildMemoryContext(text);
       if (memoryContext.isNotEmpty) {
         systemPrompt += '\n\n--- Memory Context ---\n$memoryContext';
+      }
+      final contextWeaver = _contextWeaverProvider;
+      if (contextWeaver != null && _currentConversationId != null) {
+        final attachmentContext =
+            contextWeaver.buildContextString(_currentConversationId!);
+        if (attachmentContext.isNotEmpty) {
+          systemPrompt +=
+              '\n\n$attachmentContext\n\nUse the attached context above to inform your responses.';
+        }
       }
       final fullResponse = StringBuffer();
 
@@ -1181,7 +1193,193 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // ── Debate Club ─────────────────────────────────────
+
+  bool _debateProcessing = false;
+  DebateResult? _debateResult;
+  DebateModelConfig _debateForModel = DebateModelConfig(id: 'groq', label: 'Groq Cloud');
+  DebateModelConfig _debateAgainstModel = DebateModelConfig(id: 'claude', label: 'Claude');
+
+  bool get debateProcessing => _debateProcessing;
+  DebateResult? get debateResult => _debateResult;
+  DebateModelConfig get debateForModel => _debateForModel;
+  DebateModelConfig get debateAgainstModel => _debateAgainstModel;
+
+  List<DebateModelConfig> get debateModelOptions => const [
+    DebateModelConfig(id: 'groq', label: 'Groq Cloud'),
+    DebateModelConfig(id: 'claude', label: 'Claude'),
+    DebateModelConfig(id: 'ollama', label: 'Ollama'),
+  ];
+
+  void initDebate() {
+    _debateResult = null;
+    _debateProcessing = false;
+    notifyListeners();
+  }
+
+  void setDebateForModel(String id) {
+    final opt = debateModelOptions.firstWhere((m) => m.id == id);
+    _debateForModel = DebateModelConfig(id: opt.id, label: opt.label);
+    if (_debateAgainstModel.id == _debateForModel.id) {
+      final other = debateModelOptions.firstWhere((m) => m.id != id);
+      _debateAgainstModel = DebateModelConfig(id: other.id, label: other.label);
+    }
+    notifyListeners();
+  }
+
+  void setDebateAgainstModel(String id) {
+    final opt = debateModelOptions.firstWhere((m) => m.id == id);
+    _debateAgainstModel = DebateModelConfig(id: opt.id, label: opt.label);
+    if (_debateForModel.id == _debateAgainstModel.id) {
+      final other = debateModelOptions.firstWhere((m) => m.id != id);
+      _debateForModel = DebateModelConfig(id: other.id, label: other.label);
+    }
+    notifyListeners();
+  }
+
+  Future<void> runDebate(String topic) async {
+    if (topic.trim().isEmpty || _debateProcessing) return;
+
+    _debateProcessing = true;
+    final now = DateTime.now();
+    _debateResult = DebateResult(
+      topic: topic,
+      forArg: DebateArgument(
+        side: 'for',
+        modelId: _debateForModel.id,
+        modelLabel: _debateForModel.label,
+        startTime: now,
+      ),
+      againstArg: DebateArgument(
+        side: 'against',
+        modelId: _debateAgainstModel.id,
+        modelLabel: _debateAgainstModel.label,
+        startTime: now,
+      ),
+    );
+    notifyListeners();
+
+    await Future.wait([
+      _streamDebateSide(topic, _debateResult!.forArg, true),
+      _streamDebateSide(topic, _debateResult!.againstArg, false),
+    ]);
+
+    _debateProcessing = false;
+    notifyListeners();
+  }
+
+  Future<void> _streamDebateSide(String topic, DebateArgument arg, bool isFor) async {
+    try {
+      final service = _createDebateService(arg.modelId);
+      final systemPrompt = isFor
+          ? 'You are a skilled debater arguing FOR the given topic. Present compelling, well-structured arguments with evidence and reasoning. Use a formal debate format with clear points.'
+          : 'You are a skilled debater arguing AGAINST the given topic. Present compelling, well-structured counter-arguments with evidence and reasoning. Use a formal debate format with clear points.';
+      final buffer = StringBuffer();
+      await for (final chunk in service.streamResponse(
+        message: 'Debate topic: $topic\n\nPresent your ${isFor ? "FOR" : "AGAINST"} arguments in a structured format.',
+        history: [],
+        systemPrompt: systemPrompt,
+      )) {
+        buffer.write(chunk);
+        arg.content = buffer.toString();
+        notifyListeners();
+      }
+      arg.isComplete = true;
+      arg.endTime = DateTime.now();
+      notifyListeners();
+    } catch (e) {
+      arg.error = e.toString().replaceAll('Exception: ', '');
+      arg.isComplete = true;
+      arg.endTime = DateTime.now();
+      notifyListeners();
+    }
+  }
+
+  AIService _createDebateService(String modelId) {
+    final temp = _settingsProvider.temperature;
+    switch (modelId) {
+      case 'groq':
+        final apiKey = dotenv.env['GROQ_API_KEY'] ?? '';
+        if (apiKey.isEmpty || apiKey == 'your_groq_api_key_here') {
+          throw Exception('Set your Groq API key in the .env file');
+        }
+        return GroqService(apiKey: apiKey, model: _settingsProvider.groqModel, temperature: temp);
+      case 'claude':
+        final apiKey = dotenv.env['ANTHROPIC_API_KEY'] ?? '';
+        if (apiKey.isEmpty) {
+          throw Exception('Set your Anthropic API key in the .env file');
+        }
+        return ClaudeService(apiKey: apiKey, model: _settingsProvider.claudeModel, temperature: temp);
+      case 'ollama':
+        return OllamaService(
+          endpoint: _settingsProvider.ollamaEndpoint,
+          model: _settingsProvider.ollamaModel,
+          temperature: temp,
+        );
+      default:
+        throw Exception('Unknown model: $modelId');
+    }
+  }
+
+  void clearDebate() {
+    _debateResult = null;
+    _debateProcessing = false;
+    notifyListeners();
+  }
+
   Future<void> _save() async {
     await _hiveService.saveConversations(_conversations);
   }
+}
+
+// ── Debate Models ──────────────────────────────────────
+
+class DebateModelConfig {
+  final String id;
+  final String label;
+  const DebateModelConfig({required this.id, required this.label});
+}
+
+class DebateArgument {
+  final String side;
+  final String modelId;
+  final String modelLabel;
+  String content;
+  bool isComplete;
+  String? error;
+  DateTime? startTime;
+  DateTime? endTime;
+
+  DebateArgument({
+    required this.side,
+    required this.modelId,
+    required this.modelLabel,
+    this.content = '',
+    this.isComplete = false,
+    this.error,
+    this.startTime,
+    this.endTime,
+  });
+
+  Duration? get elapsed {
+    if (startTime == null || endTime == null) return null;
+    return endTime!.difference(startTime!);
+  }
+
+  double? get charsPerSecond {
+    if (elapsed == null || elapsed!.inSeconds == 0) return null;
+    return content.length / elapsed!.inMilliseconds * 1000;
+  }
+}
+
+class DebateResult {
+  final String topic;
+  final DebateArgument forArg;
+  final DebateArgument againstArg;
+
+  DebateResult({
+    required this.topic,
+    required this.forArg,
+    required this.againstArg,
+  });
 }

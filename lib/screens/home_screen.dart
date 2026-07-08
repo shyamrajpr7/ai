@@ -17,6 +17,7 @@ import 'prompt_vault_screen.dart';
 import 'persona_forge_screen.dart';
 import 'arena_screen.dart';
 import 'cognitive_lab_screen.dart';
+import 'debate_club_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -756,6 +757,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                       tooltip: 'Cognitive Lab',
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.balance,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const DebateClubScreen(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Debate Club',
                     ),
                     IconButton(
                       icon: Icon(
