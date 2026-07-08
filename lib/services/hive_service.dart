@@ -9,6 +9,7 @@ import '../models/saved_prompt.dart';
 import '../models/flash_card.dart';
 import '../models/ritual.dart';
 import '../models/context_attachment.dart';
+import '../models/habit.dart';
 
 class HiveService {
   static const _boxName = 'ai_chat_app';
@@ -23,6 +24,7 @@ class HiveService {
   static const _flashCardKey = 'flash_cards';
   static const _ritualKey = 'rituals';
   static const _contextKey = 'context_attachments';
+  static const _habitKey = 'habits';
 
   late Box _box;
 
@@ -132,6 +134,20 @@ class HiveService {
     final list = jsonDecode(raw) as List;
     return list
         .map((e) => Ritual.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> saveHabits(List<Habit> habits) async {
+    final data = habits.map((h) => h.toJson()).toList();
+    await _box.put(_habitKey, jsonEncode(data));
+  }
+
+  List<Habit> loadHabits() {
+    final raw = _box.get(_habitKey);
+    if (raw == null) return [];
+    final list = jsonDecode(raw) as List;
+    return list
+        .map((e) => Habit.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

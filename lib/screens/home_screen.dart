@@ -19,6 +19,7 @@ import 'arena_screen.dart';
 import 'cognitive_lab_screen.dart';
 import 'debate_club_screen.dart';
 import 'document_oracle_screen.dart';
+import 'habit_tracker_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -790,6 +791,22 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                       tooltip: 'Document Oracle',
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.repeat,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                      onPressed: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const HabitTrackerScreen(),
+                          ),
+                        );
+                      },
+                      tooltip: 'Habit Tracker',
                     ),
                     IconButton(
                       icon: Icon(

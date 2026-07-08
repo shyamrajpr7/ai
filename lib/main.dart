@@ -14,6 +14,7 @@ import 'providers/ritual_provider.dart';
 import 'providers/chat_export_provider.dart';
 import 'providers/context_weaver_provider.dart';
 import 'providers/document_oracle_provider.dart';
+import 'providers/habit_provider.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -56,6 +57,9 @@ void main() async {
 
   final documentOracleProvider = DocumentOracleProvider(settingsProvider);
 
+  final habitProvider = HabitProvider(hiveService, settingsProvider);
+  await habitProvider.load();
+
   runApp(
     MultiProvider(
       providers: [
@@ -71,6 +75,7 @@ void main() async {
         ChangeNotifierProvider.value(value: chatExportProvider),
         ChangeNotifierProvider.value(value: contextWeaverProvider),
         ChangeNotifierProvider.value(value: documentOracleProvider),
+        ChangeNotifierProvider.value(value: habitProvider),
       ],
       child: const NexusApp(),
     ),
