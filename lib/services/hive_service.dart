@@ -8,6 +8,7 @@ import '../models/mood_analytics.dart';
 import '../models/saved_prompt.dart';
 import '../models/flash_card.dart';
 import '../models/ritual.dart';
+import '../models/context_attachment.dart';
 
 class HiveService {
   static const _boxName = 'ai_chat_app';
@@ -21,6 +22,7 @@ class HiveService {
   static const _graphKey = 'knowledge_graph';
   static const _flashCardKey = 'flash_cards';
   static const _ritualKey = 'rituals';
+  static const _contextKey = 'context_attachments';
 
   late Box _box;
 
@@ -163,5 +165,27 @@ class HiveService {
     return list
         .map((e) => MoodEntry.fromJson(e as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<void> saveContextAttachments(
+      Map<String, List<ContextAttachment>> data) async {
+    final raw = data.map((k, v) => MapEntry(
+          k,
+          v.map((a) => a.toJson()).toList(),
+        ));
+    await _box.put(_contextKey, jsonEncode(raw));
+  }
+
+  Map<String, List<ContextAttachment>> loadContextAttachments() {
+    final raw = _box.get(_contextKey);
+    if (raw == null) return {};
+    final decoded = jsonDecode(raw) as Map<String, dynamic>;
+    return decoded.map((k, v) => MapEntry(
+          k,
+          (v as List)
+              .map((e) =>
+                  ContextAttachment.fromJson(e as Map<String, dynamic>))
+              .toList(),
+        ));
   }
 }

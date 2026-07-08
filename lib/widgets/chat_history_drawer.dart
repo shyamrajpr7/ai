@@ -23,6 +23,7 @@ import '../screens/code_studio_screen.dart';
 import '../screens/persona_forge_screen.dart';
 import '../screens/ritual_engine_screen.dart';
 import '../screens/chat_export_studio_screen.dart';
+import '../screens/context_weaver_screen.dart';
 
 class ChatHistoryDrawer extends StatelessWidget {
   final ChatProvider provider;
@@ -213,6 +214,8 @@ class ChatHistoryDrawer extends StatelessWidget {
           () => _navigate(context, const RitualEngineScreen())),
       _NavItem('Export Studio', Icons.file_download_rounded, 'Export chats as PDF, Markdown & themes',
           () => _navigate(context, const ChatExportStudioScreen())),
+      _NavItem('Context Weaver', Icons.link_rounded, 'Attach files, URLs & YouTube links',
+          () => _navigate(context, const ContextWeaverScreen())),
       _NavItem('Voice Hub', Icons.waves, 'Hands-free assistant',
           () => _navigate(context, const VoiceHubScreen())),
       _NavItem('Dream Canvas', Icons.dashboard_customize_outlined, 'Vision board',
@@ -292,6 +295,7 @@ class ChatHistoryDrawer extends StatelessWidget {
                   Icons.face_rounded,
                   Icons.self_improvement,
                   Icons.file_download_rounded,
+                  Icons.link_rounded,
                   Icons.waves,
                   Icons.dashboard_customize_outlined,
                   Icons.auto_awesome,
