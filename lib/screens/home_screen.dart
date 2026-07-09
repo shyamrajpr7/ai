@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../providers/chat_provider.dart';
 import '../providers/settings_provider.dart';
 import '../models/persona.dart';
+import '../models/search_result.dart';
 import '../widgets/gradient_mesh_background.dart';
 import '../widgets/chat_bubble.dart';
 import '../widgets/glass_input_bar.dart';
@@ -43,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isSearching = false;
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
-  List<Map<String, dynamic>> _searchResults = [];
+  List<ConversationSearchGroup> _searchResults = [];
   final _searchScrollController = ScrollController();
 
   @override
@@ -360,11 +361,11 @@ class _HomeScreenState extends State<HomeScreen> {
   void _onSearchChanged(String value) {
     final provider = context.read<ChatProvider>();
     setState(() {
-      _searchResults = provider.searchMessages(value);
+      _searchResults = value.trim().isEmpty ? [] : provider.searchMessages(value);
     });
   }
 
-  void _onSearchResultTap(String conversationId) {
+  void _onSearchResultTap(String conversationId, String? messageId) {
     final provider = context.read<ChatProvider>();
     provider.selectConversation(conversationId);
     _closeSearch();
@@ -1122,95 +1123,226 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.only(top: 8, bottom: 12),
       itemCount: _searchResults.length,
       itemBuilder: (context, index) {
-        final result = _searchResults[index];
-        final msg = result['message'] as ChatMessage;
-        final convTitle = result['conversationTitle'] as String;
-        final convId = result['conversationId'] as String;
-        final isUser = msg.role == 'user';
+        final group = _searchResults[index];
+        final query = _searchController.text;
 
-        return GestureDetector(
-          onTap: () => _onSearchResultTap(convId),
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.04),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.06),
-              ),
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.03),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.06),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isUser
-                        ? accent.withOpacity(0.2)
-                        : Colors.white.withOpacity(0.08),
-                  ),
-                  child: Icon(
-                    isUser ? Icons.person : Icons.auto_awesome,
-                    size: 16,
-                    color: isUser ? accent : Colors.white.withOpacity(0.5),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Text(
-                            convTitle,
-                            style: TextStyle(
-                              color: accent.withOpacity(0.8),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'SpaceGrotesk',
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            isUser ? 'You' : 'Nexus',
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.3),
-                              fontSize: 11,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        msg.content,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 14,
-                          fontFamily: 'Inter',
-                          height: 1.4,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  size: 18,
-                  color: Colors.white.withOpacity(0.15),
-                ),
-              ],
-            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildGroupHeader(accent, group),
+              ...group.results.map((r) => _buildResultItem(accent, r, query)),
+            ],
           ),
         );
       },
     );
+  }
+
+  Widget _buildGroupHeader(Color accent, ConversationSearchGroup group) {
+    return GestureDetector(
+      onTap: () => _onSearchResultTap(group.conversationId, null),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: Colors.white.withOpacity(0.04)),
+          ),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.chat_rounded, size: 16, color: accent.withOpacity(0.7)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                group.conversationTitle,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'SpaceGrotesk',
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: accent.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                '${group.matchCount} ${group.matchCount == 1 ? 'match' : 'matches'}',
+                style: TextStyle(
+                  color: accent.withOpacity(0.8),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.chevron_right_rounded,
+              size: 18,
+              color: Colors.white.withOpacity(0.2),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultItem(Color accent, SearchResult result, String query) {
+    final msg = result.message;
+    final isUser = msg.role == 'user';
+    final timeStr = _formatTime(msg.timestamp);
+
+    return GestureDetector(
+      onTap: () => _onSearchResultTap(result.conversationId, msg.id),
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isUser
+                    ? accent.withOpacity(0.15)
+                    : Colors.white.withOpacity(0.06),
+              ),
+              child: Icon(
+                isUser ? Icons.person : Icons.auto_awesome,
+                size: 14,
+                color: isUser ? accent : Colors.white.withOpacity(0.4),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        isUser ? 'You' : 'Nexus',
+                        style: TextStyle(
+                          color: isUser
+                              ? accent.withOpacity(0.7)
+                              : Colors.white.withOpacity(0.4),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        timeStr,
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.2),
+                          fontSize: 10,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  _buildHighlightedText(msg.content, query, accent),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHighlightedText(String text, String query, Color accent) {
+    if (query.isEmpty) {
+      return Text(
+        text,
+        style: TextStyle(
+          color: Colors.white.withOpacity(0.7),
+          fontSize: 13,
+          fontFamily: 'Inter',
+          height: 1.4,
+        ),
+        maxLines: 3,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    final lower = text.toLowerCase();
+    final qLower = query.toLowerCase();
+    final spans = <TextSpan>[];
+    int start = 0;
+
+    while (true) {
+      final idx = lower.indexOf(qLower, start);
+      if (idx == -1) {
+        spans.add(TextSpan(
+          text: text.substring(start),
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 13,
+            fontFamily: 'Inter',
+            height: 1.4,
+          ),
+        ));
+        break;
+      }
+
+      if (idx > start) {
+        spans.add(TextSpan(
+          text: text.substring(start, idx),
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.7),
+            fontSize: 13,
+            fontFamily: 'Inter',
+            height: 1.4,
+          ),
+        ));
+      }
+
+      spans.add(TextSpan(
+        text: text.substring(idx, idx + query.length),
+        style: TextStyle(
+          color: accent,
+          fontSize: 13,
+          fontFamily: 'Inter',
+          fontWeight: FontWeight.w600,
+          height: 1.4,
+          backgroundColor: accent.withOpacity(0.15),
+        ),
+      ));
+
+      start = idx + query.length;
+    }
+
+    return RichText(
+      text: TextSpan(children: spans),
+      maxLines: 3,
+      overflow: TextOverflow.ellipsis,
+    );
+  }
+
+  String _formatTime(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inHours < 1) return '${diff.inMinutes}m ago';
+    if (diff.inDays < 1) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${dt.month}/${dt.day}/${dt.year}';
   }
 }
 

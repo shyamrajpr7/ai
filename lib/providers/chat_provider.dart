@@ -5,6 +5,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:uuid/uuid.dart';
 import '../models/chat_message.dart';
 import '../models/chat_conversation.dart';
+import '../models/search_result.dart';
 import '../models/conversation_branch.dart';
 import '../models/diary_entry.dart';
 import '../models/memory_node.dart';
@@ -651,22 +652,73 @@ class ChatProvider extends ChangeNotifier {
         e.date.day == today.day);
   }
 
-  List<Map<String, dynamic>> searchMessages(String query) {
+  List<ConversationSearchGroup> searchMessages(String query) {
     if (query.trim().isEmpty) return [];
     final lower = query.toLowerCase();
-    final results = <Map<String, dynamic>>[];
+    final groupMap = <String, List<SearchResult>>{};
+
     for (final conv in _conversations) {
-      for (final msg in conv.messages) {
-        if (msg.content.toLowerCase().contains(lower)) {
-          results.add({
-            'conversationId': conv.id,
-            'conversationTitle': conv.title,
-            'message': msg,
-          });
+      final allBranches = <ChatMessage>[];
+      for (final branchMsgs in conv.branchMessages.values) {
+        allBranches.addAll(branchMsgs);
+      }
+      if (allBranches.isEmpty) allBranches.addAll(conv.messages);
+
+      final seen = <String>{};
+      final titleMatch = conv.title.toLowerCase().contains(lower);
+      final results = <SearchResult>[];
+
+      if (titleMatch && allBranches.isNotEmpty) {
+        results.add(SearchResult(
+          conversationId: conv.id,
+          conversationTitle: conv.title,
+          message: allBranches.first,
+          matches: const [MatchSpan(-1, -1)],
+        ));
+        seen.add(allBranches.first.id);
+      }
+
+      for (final msg in allBranches) {
+        if (seen.contains(msg.id)) continue;
+        seen.add(msg.id);
+
+        final text = msg.content.toLowerCase();
+        final matches = <MatchSpan>[];
+        int start = 0;
+        while (true) {
+          final idx = text.indexOf(lower, start);
+          if (idx == -1) break;
+          matches.add(MatchSpan(idx, idx + query.length));
+          start = idx + 1;
+        }
+
+        if (matches.isNotEmpty) {
+          results.add(SearchResult(
+            conversationId: conv.id,
+            conversationTitle: conv.title,
+            message: msg,
+            matches: matches,
+          ));
         }
       }
+
+      if (results.isNotEmpty) {
+        groupMap[conv.id] = results;
+      }
     }
-    return results;
+
+    final groups = <ConversationSearchGroup>[];
+    for (final conv in _conversations) {
+      final results = groupMap[conv.id];
+      if (results != null && results.isNotEmpty) {
+        groups.add(ConversationSearchGroup(
+          conversationId: conv.id,
+          conversationTitle: conv.title,
+          results: results,
+        ));
+      }
+    }
+    return groups;
   }
 
   Map<DateTime, int> getMessageCountsByDay() {
