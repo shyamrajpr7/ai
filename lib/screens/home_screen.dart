@@ -699,6 +699,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                         ),
+                      _buildModelBadge(accent),
                       const Spacer(),
                       _NavIconButton(
                         icon: Icons.search_rounded,
@@ -885,6 +886,44 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
         ),
       ),
+    );
+  }
+
+  Widget _buildModelBadge(Color accent) {
+    final settings = context.watch<SettingsProvider>();
+    String modelName;
+    switch (settings.backend) {
+      case BackendType.groq:
+        modelName = settings.groqModel;
+      case BackendType.claude:
+        modelName = settings.claudeModel;
+      case BackendType.ollama:
+        modelName = settings.ollamaModel;
+    }
+    return Container(
+        margin: const EdgeInsets.only(right: 2),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.white.withOpacity(0.06)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.memory, size: 11, color: Colors.white.withOpacity(0.4)),
+            const SizedBox(width: 4),
+            Text(
+              modelName,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.4),
+                fontSize: 10,
+                fontFamily: 'SpaceGrotesk',
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
     );
   }
 
