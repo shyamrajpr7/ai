@@ -15,12 +15,14 @@ class _GradientMeshBackgroundState extends State<GradientMeshBackground>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   Color _accent = const Color(0xFF7C4DFF);
+  late SettingsProvider _settingsProvider;
 
   @override
   void initState() {
     super.initState();
-    _accent = context.read<SettingsProvider>().accentColor;
-    context.read<SettingsProvider>().addListener(_onSettingsChanged);
+    _settingsProvider = context.read<SettingsProvider>();
+    _accent = _settingsProvider.accentColor;
+    _settingsProvider.addListener(_onSettingsChanged);
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 25),
@@ -28,7 +30,8 @@ class _GradientMeshBackgroundState extends State<GradientMeshBackground>
   }
 
   void _onSettingsChanged() {
-    final accent = context.read<SettingsProvider>().accentColor;
+    if (!mounted) return;
+    final accent = _settingsProvider.accentColor;
     if (accent != _accent) {
       setState(() => _accent = accent);
     }
@@ -37,7 +40,7 @@ class _GradientMeshBackgroundState extends State<GradientMeshBackground>
   @override
   void dispose() {
     _controller.dispose();
-    context.read<SettingsProvider>().removeListener(_onSettingsChanged);
+    _settingsProvider.removeListener(_onSettingsChanged);
     super.dispose();
   }
 

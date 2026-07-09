@@ -602,9 +602,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: _isSearching
               ? _buildSearchBar(accent)
-              : SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
+              : Row(
                     children: [
                       IconButton(
                         icon: Icon(
@@ -613,50 +611,55 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         onPressed: () => Scaffold.of(buildContext).openDrawer(),
                       ),
-                      GestureDetector(
-                        onTap: () => _showPersonaPicker(buildContext),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 30,
-                              height: 30,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  colors: [accent, const Color(0xFF448AFF)],
-                                ),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: accent.withOpacity(0.3),
-                                    blurRadius: 8,
+                      Flexible(
+                        child: GestureDetector(
+                          onTap: () => _showPersonaPicker(buildContext),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: LinearGradient(
+                                    colors: [accent, const Color(0xFF448AFF)],
                                   ),
-                                ],
-                              ),
-                              child: Center(
-                                child: Text(
-                                  context.watch<SettingsProvider>().activePersona.emoji,
-                                  style: const TextStyle(fontSize: 15),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: accent.withOpacity(0.3),
+                                      blurRadius: 8,
+                                    ),
+                                  ],
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    context.watch<SettingsProvider>().activePersona.emoji,
+                                    style: const TextStyle(fontSize: 15),
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              context.watch<SettingsProvider>().activePersona.name,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'SpaceGrotesk',
+                              const SizedBox(width: 8),
+                              Flexible(
+                                child: Text(
+                                  context.watch<SettingsProvider>().activePersona.name,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'SpaceGrotesk',
+                                  ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 4),
-                            Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              color: Colors.white.withOpacity(0.3),
-                              size: 18,
-                            ),
-                          ],
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: Colors.white.withOpacity(0.3),
+                                size: 18,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                       if (provider.currentConversation != null &&
@@ -879,7 +882,6 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ],
                   ),
-                ),
         ),
       ),
     );

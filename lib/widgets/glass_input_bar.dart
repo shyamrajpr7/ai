@@ -40,7 +40,7 @@ class GlassInputBar extends StatefulWidget {
 }
 
 class _GlassInputBarState extends State<GlassInputBar>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final stt.SpeechToText _speech = stt.SpeechToText();
   final ImagePicker _picker = ImagePicker();
   bool _isListening = false;
