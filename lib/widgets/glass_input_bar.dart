@@ -128,10 +128,10 @@ class _GlassInputBarState extends State<GlassInputBar>
 
   bool get _isActive => widget.isImageGen || widget.isVideoGen;
 
-  String get _hintText {
+  String _hintText(bool webSearchEnabled) {
     if (widget.isImageGen) return 'Describe the image you want...';
     if (widget.isVideoGen) return 'Describe the video you want...';
-    return context.watch<SettingsProvider>().webSearchEnabled
+    return webSearchEnabled
         ? 'Message Nexus (web search on)...'
         : 'Message Nexus...';
   }
@@ -150,6 +150,8 @@ class _GlassInputBarState extends State<GlassInputBar>
   @override
   Widget build(BuildContext context) {
     final accent = context.watch<SettingsProvider>().accentColor;
+
+    final webSearchEnabled = context.watch<SettingsProvider>().webSearchEnabled;
 
     return AnimatedBuilder(
       animation: _sendPulseController,
@@ -210,7 +212,7 @@ class _GlassInputBarState extends State<GlassInputBar>
                         decoration: InputDecoration(
                           hintText: widget.isProcessing
                               ? 'Generating...'
-                              : _hintText,
+                              : _hintText(webSearchEnabled),
                           hintStyle: TextStyle(
                             color: (_isActive ? accent : Colors.white).withOpacity(0.3),
                             fontSize: 15,
@@ -238,7 +240,7 @@ class _GlassInputBarState extends State<GlassInputBar>
   }
 
   Widget _buildGenButton(Color accent) {
-    if (widget.isProcessing || widget.isVideoGen) return const SizedBox.shrink();
+    if (widget.isProcessing || widget.isVideoGen) return SizedBox(width: 0, height: 0);
 
     return GestureDetector(
       onTap: () {
@@ -268,7 +270,7 @@ class _GlassInputBarState extends State<GlassInputBar>
   }
 
   Widget _buildVideoGenButton(Color accent) {
-    if (widget.isProcessing || widget.isImageGen) return const SizedBox.shrink();
+    if (widget.isProcessing || widget.isImageGen) return SizedBox(width: 0, height: 0);
 
     return GestureDetector(
       onTap: () {

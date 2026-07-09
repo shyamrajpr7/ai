@@ -17,6 +17,7 @@ import 'prompt_vault_screen.dart';
 import 'persona_forge_screen.dart';
 import 'arena_screen.dart';
 import 'cognitive_lab_screen.dart';
+import 'code_studio_screen.dart';
 import 'debate_club_screen.dart';
 import 'document_oracle_screen.dart';
 import 'habit_tracker_screen.dart';
@@ -64,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
@@ -600,311 +602,283 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           child: _isSearching
               ? _buildSearchBar(accent)
-              : Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        Icons.menu_rounded,
-                        color: Colors.white.withOpacity(0.6),
+              : SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.menu_rounded,
+                          color: Colors.white.withOpacity(0.6),
+                        ),
+                        onPressed: () => Scaffold.of(buildContext).openDrawer(),
                       ),
-                      onPressed: () => Scaffold.of(buildContext).openDrawer(),
-                    ),
-                    GestureDetector(
-                      onTap: () => _showPersonaPicker(buildContext),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 30,
-                            height: 30,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [accent, const Color(0xFF448AFF)],
+                      GestureDetector(
+                        onTap: () => _showPersonaPicker(buildContext),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 30,
+                              height: 30,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: [accent, const Color(0xFF448AFF)],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: accent.withOpacity(0.3),
+                                    blurRadius: 8,
+                                  ),
+                                ],
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: accent.withOpacity(0.3),
-                                  blurRadius: 8,
+                              child: Center(
+                                child: Text(
+                                  context.watch<SettingsProvider>().activePersona.emoji,
+                                  style: const TextStyle(fontSize: 15),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              context.watch<SettingsProvider>().activePersona.name,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'SpaceGrotesk',
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: Colors.white.withOpacity(0.3),
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (provider.currentConversation != null &&
+                          provider.currentConversation!.branches.length > 1)
+                        GestureDetector(
+                          onTap: () {
+                            _showBranchIndicator(context, provider);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
+                            margin: const EdgeInsets.only(right: 4),
+                            decoration: BoxDecoration(
+                              color: accent.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: accent.withOpacity(0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.call_split_rounded,
+                                    size: 12, color: accent),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _getActiveBranchName(provider),
+                                  style: TextStyle(
+                                    color: accent,
+                                    fontSize: 11,
+                                    fontFamily: 'SpaceGrotesk',
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
                               ],
                             ),
-                            child: Center(
-                              child: Text(
-                                context.watch<SettingsProvider>().activePersona.emoji,
-                                style: const TextStyle(fontSize: 15),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            context.watch<SettingsProvider>().activePersona.name,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'SpaceGrotesk',
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.keyboard_arrow_down_rounded,
-                            color: Colors.white.withOpacity(0.3),
-                            size: 18,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (provider.currentConversation != null &&
-                        provider.currentConversation!.branches.length > 1)
-                      GestureDetector(
-                        onTap: () {
-                          _showBranchIndicator(context, provider);
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 2),
-                          margin: const EdgeInsets.only(right: 4),
-                          decoration: BoxDecoration(
-                            color: accent.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: accent.withOpacity(0.3),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.call_split_rounded,
-                                  size: 12, color: accent),
-                              const SizedBox(width: 4),
-                              Text(
-                                _getActiveBranchName(provider),
-                                style: TextStyle(
-                                  color: accent,
-                                  fontSize: 11,
-                                  fontFamily: 'SpaceGrotesk',
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
                           ),
                         ),
+                      const Spacer(),
+                      _NavIconButton(
+                        icon: Icons.search_rounded,
+                        tooltip: 'Search messages',
+                        onPressed: _openSearch,
                       ),
-                    const Spacer(),
-                    IconButton(
-                      icon: Icon(
-                        Icons.search_rounded,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.add_rounded,
+                        tooltip: 'New Chat',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          provider.createConversation();
+                        },
                       ),
-                      onPressed: _openSearch,
-                      tooltip: 'Search messages',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.account_tree_outlined,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.account_tree_outlined,
+                        tooltip: 'Chat Time Machine',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          _openTimeMachine(context, provider);
+                        },
                       ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        _openTimeMachine(context, provider);
-                      },
-                      tooltip: 'Chat Time Machine',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.add_rounded,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.bookmark_outline_rounded,
+                        tooltip: 'Prompt Vault',
+                        onPressed: () => _showPromptVault(context),
                       ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        provider.createConversation();
-                      },
-                      tooltip: 'New Chat',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.bookmark_outline_rounded,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.auto_awesome,
+                        tooltip: 'Code Studio',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CodeStudioScreen(),
+                            ),
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        _showPromptVault(context);
-                      },
-                      tooltip: 'Prompt Vault',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.sports_kabaddi,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.sports_kabaddi,
+                        tooltip: 'Model Arena',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ArenaScreen(),
+                            ),
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ArenaScreen(),
-                          ),
-                        );
-                      },
-                      tooltip: 'Model Arena',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.science_outlined,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.science_outlined,
+                        tooltip: 'Cognitive Lab',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const CognitiveLabScreen(),
+                            ),
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CognitiveLabScreen(),
-                          ),
-                        );
-                      },
-                      tooltip: 'Cognitive Lab',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.balance,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.balance,
+                        tooltip: 'Debate Club',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const DebateClubScreen(),
+                            ),
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const DebateClubScreen(),
-                          ),
-                        );
-                      },
-                      tooltip: 'Debate Club',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.menu_book,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.menu_book,
+                        tooltip: 'Document Oracle',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const DocumentOracleScreen(),
+                            ),
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const DocumentOracleScreen(),
-                          ),
-                        );
-                      },
-                      tooltip: 'Document Oracle',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.repeat,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.repeat,
+                        tooltip: 'Habit Tracker',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const HabitTrackerScreen(),
+                            ),
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const HabitTrackerScreen(),
-                          ),
-                        );
-                      },
-                      tooltip: 'Habit Tracker',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.translate,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.translate,
+                        tooltip: 'Language Dojo',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const LanguageDojoScreen(),
+                            ),
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const LanguageDojoScreen(),
-                          ),
-                        );
-                      },
-                      tooltip: 'Language Dojo',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.auto_stories,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.auto_stories,
+                        tooltip: 'Story Forge',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const StoryForgeScreen(),
+                            ),
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const StoryForgeScreen(),
-                          ),
-                        );
-                      },
-                      tooltip: 'Story Forge',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.mood,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.mood,
+                        tooltip: 'Emotion Mirror',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const EmotionMirrorScreen(),
+                            ),
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const EmotionMirrorScreen(),
-                          ),
-                        );
-                      },
-                      tooltip: 'Emotion Mirror',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.record_voice_over,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.record_voice_over,
+                        tooltip: 'Meeting Scribe',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const MeetingScribeScreen(),
+                            ),
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const MeetingScribeScreen(),
-                          ),
-                        );
-                      },
-                      tooltip: 'Meeting Scribe',
-                    ),
-                    IconButton(
-                      icon: Icon(
-                        Icons.settings_rounded,
-                        color: Colors.white.withOpacity(0.6),
+                      _NavIconButton(
+                        icon: Icons.settings_rounded,
+                        tooltip: 'Settings',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            PageRouteBuilder(
+                              pageBuilder: (_, __, ___) => const SettingsScreen(),
+                              transitionsBuilder: (_, animation, __, child) {
+                                return SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(1, 0),
+                                    end: Offset.zero,
+                                  ).animate(CurvedAnimation(
+                                    parent: animation,
+                                    curve: Curves.easeOutCubic,
+                                  )),
+                                  child: child,
+                                );
+                              },
+                              transitionDuration: const Duration(milliseconds: 350),
+                            ),
+                          );
+                        },
                       ),
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          PageRouteBuilder(
-                            pageBuilder: (_, __, ___) => const SettingsScreen(),
-                            transitionsBuilder: (_, animation, __, child) {
-                              return SlideTransition(
-                                position: Tween<Offset>(
-                                  begin: const Offset(1, 0),
-                                  end: Offset.zero,
-                                ).animate(CurvedAnimation(
-                                  parent: animation,
-                                  curve: Curves.easeOutCubic,
-                                )),
-                                child: child,
-                              );
-                            },
-                            transitionDuration: const Duration(milliseconds: 350),
-                          ),
-                        );
-                      },
-                      tooltip: 'Settings',
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
         ),
       ),
@@ -1234,6 +1208,27 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _NavIconButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  const _NavIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      icon: Icon(icon, color: Colors.white.withOpacity(0.6)),
+      onPressed: onPressed,
+      tooltip: tooltip,
     );
   }
 }

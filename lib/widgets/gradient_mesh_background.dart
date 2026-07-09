@@ -14,30 +14,40 @@ class GradientMeshBackground extends StatefulWidget {
 class _GradientMeshBackgroundState extends State<GradientMeshBackground>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
+  Color _accent = const Color(0xFF7C4DFF);
 
   @override
   void initState() {
     super.initState();
+    _accent = context.read<SettingsProvider>().accentColor;
+    context.read<SettingsProvider>().addListener(_onSettingsChanged);
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 25),
     )..repeat();
   }
 
+  void _onSettingsChanged() {
+    final accent = context.read<SettingsProvider>().accentColor;
+    if (accent != _accent) {
+      setState(() => _accent = accent);
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
+    context.read<SettingsProvider>().removeListener(_onSettingsChanged);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final accent = context.watch<SettingsProvider>().accentColor;
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
         return CustomPaint(
-          painter: _MeshPainter(_controller.value, accent),
+          painter: _MeshPainter(_controller.value, _accent),
           child: SizedBox(
             width: MediaQuery.of(context).size.width,
             height: MediaQuery.of(context).size.height,
