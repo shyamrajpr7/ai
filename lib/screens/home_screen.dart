@@ -27,6 +27,7 @@ import 'story_forge_screen.dart';
 import 'emotion_mirror_screen.dart';
 import 'meeting_scribe_screen.dart';
 import 'daily_briefing_screen.dart';
+import 'snippet_vault_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -867,6 +868,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const DailyBriefingScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _NavIconButton(
+                        icon: Icons.code,
+                        tooltip: 'Snippet Vault',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const SnippetVaultScreen(),
                             ),
                           );
                         },

@@ -21,6 +21,7 @@ import 'providers/emotion_mirror_provider.dart';
 import 'providers/meeting_scribe_provider.dart';
 import 'providers/flash_card_provider.dart';
 import 'providers/daily_briefing_provider.dart';
+import 'providers/snippet_vault_provider.dart';
 import 'services/notification_service.dart';
 import 'screens/splash_screen.dart';
 
@@ -89,6 +90,9 @@ void main() async {
   );
   await dailyBriefingProvider.load();
 
+  final snippetVaultProvider = SnippetVaultProvider(hiveService);
+  await snippetVaultProvider.load();
+
   final notificationService = NotificationService();
   await notificationService.init();
   if (settingsProvider.briefingEnabled) {
@@ -121,6 +125,7 @@ void main() async {
         ChangeNotifierProvider.value(value: meetingScribeProvider),
         ChangeNotifierProvider.value(value: flashCardProvider),
         ChangeNotifierProvider.value(value: dailyBriefingProvider),
+        ChangeNotifierProvider.value(value: snippetVaultProvider),
       ],
       child: const NexusApp(),
     ),
