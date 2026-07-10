@@ -13,6 +13,7 @@ import '../models/habit.dart';
 import '../models/daily_briefing.dart';
 import '../models/code_snippet.dart';
 import '../models/daily_quote.dart';
+import '../models/journal_entry.dart';
 
 class HiveService {
   static const _boxName = 'ai_chat_app';
@@ -31,6 +32,7 @@ class HiveService {
   static const _dailyBriefingKey = 'daily_briefings';
   static const _codeSnippetKey = 'code_snippets';
   static const _dailyQuoteKey = 'daily_quotes';
+  static const _journalKey = 'journal_entries';
 
   late Box _box;
 
@@ -196,6 +198,20 @@ class HiveService {
     final list = jsonDecode(raw) as List;
     return list
         .map((e) => DailyQuote.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> saveJournalEntries(List<JournalEntry> entries) async {
+    final data = entries.map((e) => e.toJson()).toList();
+    await _box.put(_journalKey, jsonEncode(data));
+  }
+
+  List<JournalEntry> loadJournalEntries() {
+    final raw = _box.get(_journalKey);
+    if (raw == null) return [];
+    final list = jsonDecode(raw) as List;
+    return list
+        .map((e) => JournalEntry.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 
