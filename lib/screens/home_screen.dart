@@ -28,6 +28,7 @@ import 'emotion_mirror_screen.dart';
 import 'meeting_scribe_screen.dart';
 import 'daily_briefing_screen.dart';
 import 'snippet_vault_screen.dart';
+import 'quote_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -881,6 +882,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const SnippetVaultScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _NavIconButton(
+                        icon: Icons.format_quote,
+                        tooltip: 'Daily Quotes',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const QuoteScreen(),
                             ),
                           );
                         },
