@@ -19,6 +19,9 @@ import 'providers/language_dojo_provider.dart';
 import 'providers/story_forge_provider.dart';
 import 'providers/emotion_mirror_provider.dart';
 import 'providers/meeting_scribe_provider.dart';
+import 'providers/flash_card_provider.dart';
+import 'providers/daily_briefing_provider.dart';
+import 'services/notification_service.dart';
 import 'screens/splash_screen.dart';
 
 void main() async {
@@ -64,6 +67,9 @@ void main() async {
   final habitProvider = HabitProvider(hiveService, settingsProvider);
   await habitProvider.load();
 
+  final flashCardProvider = FlashCardProvider(hiveService, chatProvider);
+  await flashCardProvider.load();
+
   final languageDojoProvider = LanguageDojoProvider(settingsProvider);
 
   final storyForgeProvider = StoryForgeProvider(settingsProvider);
@@ -71,6 +77,27 @@ void main() async {
   final emotionMirrorProvider = EmotionMirrorProvider(settingsProvider);
 
   final meetingScribeProvider = MeetingScribeProvider(settingsProvider);
+
+  final dailyBriefingProvider = DailyBriefingProvider(
+    hiveService,
+    settingsProvider,
+    habitProvider,
+    ritualProvider,
+    moodProvider,
+    flashCardProvider,
+    chatProvider,
+  );
+  await dailyBriefingProvider.load();
+
+  final notificationService = NotificationService();
+  await notificationService.init();
+  if (settingsProvider.briefingEnabled) {
+    await notificationService.requestPermissions();
+    await notificationService.scheduleDailyBriefing(
+      hour: settingsProvider.briefingHour,
+      minute: settingsProvider.briefingMinute,
+    );
+  }
 
   runApp(
     MultiProvider(
@@ -92,6 +119,8 @@ void main() async {
         ChangeNotifierProvider.value(value: storyForgeProvider),
         ChangeNotifierProvider.value(value: emotionMirrorProvider),
         ChangeNotifierProvider.value(value: meetingScribeProvider),
+        ChangeNotifierProvider.value(value: flashCardProvider),
+        ChangeNotifierProvider.value(value: dailyBriefingProvider),
       ],
       child: const NexusApp(),
     ),

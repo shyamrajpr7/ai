@@ -10,6 +10,7 @@ import '../models/flash_card.dart';
 import '../models/ritual.dart';
 import '../models/context_attachment.dart';
 import '../models/habit.dart';
+import '../models/daily_briefing.dart';
 
 class HiveService {
   static const _boxName = 'ai_chat_app';
@@ -25,6 +26,7 @@ class HiveService {
   static const _ritualKey = 'rituals';
   static const _contextKey = 'context_attachments';
   static const _habitKey = 'habits';
+  static const _dailyBriefingKey = 'daily_briefings';
 
   late Box _box;
 
@@ -148,6 +150,20 @@ class HiveService {
     final list = jsonDecode(raw) as List;
     return list
         .map((e) => Habit.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> saveDailyBriefings(List<DailyBriefing> briefings) async {
+    final data = briefings.map((b) => b.toJson()).toList();
+    await _box.put(_dailyBriefingKey, jsonEncode(data));
+  }
+
+  List<DailyBriefing> loadDailyBriefings() {
+    final raw = _box.get(_dailyBriefingKey);
+    if (raw == null) return [];
+    final list = jsonDecode(raw) as List;
+    return list
+        .map((e) => DailyBriefing.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

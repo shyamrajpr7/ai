@@ -25,6 +25,9 @@ class SettingsProvider extends ChangeNotifier {
   double _speechRate = 0.5;
   double _speechPitch = 1.0;
   bool _voiceTriggerEnabled = false;
+  bool _briefingEnabled = true;
+  int _briefingHour = 8;
+  int _briefingMinute = 0;
 
   Color get accentColor => _moodAccentColor ?? _accentColor;
   BackendType get backend => _backend;
@@ -39,6 +42,9 @@ class SettingsProvider extends ChangeNotifier {
   double get speechRate => _speechRate;
   double get speechPitch => _speechPitch;
   bool get voiceTriggerEnabled => _voiceTriggerEnabled;
+  bool get briefingEnabled => _briefingEnabled;
+  int get briefingHour => _briefingHour;
+  int get briefingMinute => _briefingMinute;
 
   Persona get activePersona {
     final idx = _personas.indexWhere((p) => p.id == _activePersonaId);
@@ -65,6 +71,9 @@ class SettingsProvider extends ChangeNotifier {
       _speechRate = (data['speechRate'] as num?)?.toDouble() ?? 0.5;
       _speechPitch = (data['speechPitch'] as num?)?.toDouble() ?? 1.0;
       _voiceTriggerEnabled = data['voiceTriggerEnabled'] as bool? ?? false;
+      _briefingEnabled = data['briefingEnabled'] as bool? ?? true;
+      _briefingHour = data['briefingHour'] as int? ?? 8;
+      _briefingMinute = data['briefingMinute'] as int? ?? 0;
       final personasRaw = data['personas'] as List<dynamic>?;
       if (personasRaw != null) {
         _personas = personasRaw
@@ -156,6 +165,19 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setBriefingEnabled(bool enabled) async {
+    _briefingEnabled = enabled;
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> setBriefingTime(int hour, int minute) async {
+    _briefingHour = hour;
+    _briefingMinute = minute;
+    await _save();
+    notifyListeners();
+  }
+
   Future<void> setActivePersona(String id) async {
     _activePersonaId = id;
     await _save();
@@ -200,6 +222,9 @@ class SettingsProvider extends ChangeNotifier {
       'speechRate': _speechRate,
       'speechPitch': _speechPitch,
       'voiceTriggerEnabled': _voiceTriggerEnabled,
+      'briefingEnabled': _briefingEnabled,
+      'briefingHour': _briefingHour,
+      'briefingMinute': _briefingMinute,
       'personas': _personas.map((p) => p.toJson()).toList(),
     });
   }

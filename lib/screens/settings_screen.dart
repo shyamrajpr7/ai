@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import '../providers/settings_provider.dart';
 import '../providers/chat_provider.dart';
+import '../services/notification_service.dart';
 import '../models/persona.dart';
 import '../widgets/gradient_mesh_background.dart';
 
@@ -209,6 +210,144 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _buildSection(
+              'Daily Briefing',
+              Icons.wb_sunny_outlined,
+              accent,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Morning briefing notification',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.85),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'Get a daily summary of habits, mood, and more',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.35),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 48,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        color: settings.briefingEnabled
+                            ? accent.withOpacity(0.25)
+                            : Colors.white.withOpacity(0.08),
+                      ),
+                      child: Switch(
+                        value: settings.briefingEnabled,
+                        onChanged: (v) async {
+                          settings.setBriefingEnabled(v);
+                          final notificationService = NotificationService();
+                          await notificationService.init();
+                          if (v) {
+                            await notificationService.requestPermissions();
+                            await notificationService.scheduleDailyBriefing(
+                              hour: settings.briefingHour,
+                              minute: settings.briefingMinute,
+                            );
+                          } else {
+                            await notificationService.cancelDailyBriefing();
+                          }
+                        },
+                        activeColor: accent,
+                        activeTrackColor: accent.withOpacity(0.3),
+                        inactiveThumbColor: Colors.white.withOpacity(0.3),
+                        inactiveTrackColor: Colors.white.withOpacity(0.08),
+                      ),
+                    ),
+                  ],
+                ),
+                if (settings.briefingEnabled) ...[
+                  const SizedBox(height: 20),
+                  _buildLabel('Notification Time'),
+                  const SizedBox(height: 10),
+                  GestureDetector(
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay(
+                          hour: settings.briefingHour,
+                          minute: settings.briefingMinute,
+                        ),
+                        builder: (context, child) {
+                          return Theme(
+                            data: Theme.of(context).copyWith(
+                              colorScheme: ColorScheme.dark(
+                                primary: accent,
+                                surface: const Color(0xFF1A1A2E),
+                              ),
+                            ),
+                            child: child!,
+                          );
+                        },
+                      );
+                      if (picked != null) {
+                        settings.setBriefingTime(picked.hour, picked.minute);
+                        final notificationService = NotificationService();
+                        await notificationService.init();
+                        await notificationService.scheduleDailyBriefing(
+                          hour: picked.hour,
+                          minute: picked.minute,
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.04),
+                        borderRadius: BorderRadius.circular(14),
+                        border:
+                            Border.all(color: Colors.white.withOpacity(0.06)),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 18,
+                            color: accent.withOpacity(0.7),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            '${settings.briefingHour.toString().padLeft(2, '0')}:${settings.briefingMinute.toString().padLeft(2, '0')}',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.85),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: 'SpaceGrotesk',
+                            ),
+                          ),
+                          const Spacer(),
+                          Icon(
+                            Icons.chevron_right,
+                            size: 18,
+                            color: Colors.white.withOpacity(0.3),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 14),

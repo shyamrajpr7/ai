@@ -26,6 +26,7 @@ import 'language_dojo_screen.dart';
 import 'story_forge_screen.dart';
 import 'emotion_mirror_screen.dart';
 import 'meeting_scribe_screen.dart';
+import 'daily_briefing_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -853,6 +854,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const MeetingScribeScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _NavIconButton(
+                        icon: Icons.wb_sunny_outlined,
+                        tooltip: 'Daily Briefing',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const DailyBriefingScreen(),
                             ),
                           );
                         },
