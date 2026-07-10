@@ -33,6 +33,7 @@ import 'journal_screen.dart';
 import 'reminder_screen.dart';
 import 'conversation_summary_screen.dart';
 import 'reading_list_screen.dart';
+import 'expense_tracker_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -951,6 +952,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const ReadingListScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _NavIconButton(
+                        icon: Icons.receipt_long,
+                        tooltip: 'Expense Tracker',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ExpenseTrackerScreen(),
                             ),
                           );
                         },
