@@ -31,6 +31,7 @@ import 'snippet_vault_screen.dart';
 import 'quote_screen.dart';
 import 'journal_screen.dart';
 import 'reminder_screen.dart';
+import 'conversation_summary_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -923,6 +924,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const ReminderScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _NavIconButton(
+                        icon: Icons.summarize,
+                        tooltip: 'Conversation Summary',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ConversationSummaryScreen(),
                             ),
                           );
                         },
