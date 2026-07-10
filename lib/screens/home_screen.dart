@@ -32,6 +32,7 @@ import 'quote_screen.dart';
 import 'journal_screen.dart';
 import 'reminder_screen.dart';
 import 'conversation_summary_screen.dart';
+import 'reading_list_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -937,6 +938,19 @@ class _HomeScreenState extends State<HomeScreen> {
                             context,
                             MaterialPageRoute(
                               builder: (_) => const ConversationSummaryScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _NavIconButton(
+                        icon: Icons.menu_book,
+                        tooltip: 'Reading List',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const ReadingListScreen(),
                             ),
                           );
                         },

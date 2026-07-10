@@ -15,6 +15,7 @@ import '../models/code_snippet.dart';
 import '../models/daily_quote.dart';
 import '../models/journal_entry.dart';
 import '../models/smart_reminder.dart';
+import '../models/reading_item.dart';
 
 class HiveService {
   static const _boxName = 'ai_chat_app';
@@ -35,6 +36,7 @@ class HiveService {
   static const _dailyQuoteKey = 'daily_quotes';
   static const _journalKey = 'journal_entries';
   static const _reminderKey = 'smart_reminders';
+  static const _readingKey = 'reading_items';
 
   late Box _box;
 
@@ -228,6 +230,20 @@ class HiveService {
     final list = jsonDecode(raw) as List;
     return list
         .map((e) => SmartReminder.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<void> saveReadingItems(List<ReadingItem> items) async {
+    final data = items.map((i) => i.toJson()).toList();
+    await _box.put(_readingKey, jsonEncode(data));
+  }
+
+  List<ReadingItem> loadReadingItems() {
+    final raw = _box.get(_readingKey);
+    if (raw == null) return [];
+    final list = jsonDecode(raw) as List;
+    return list
+        .map((e) => ReadingItem.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 

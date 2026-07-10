@@ -25,6 +25,7 @@ import 'providers/snippet_vault_provider.dart';
 import 'providers/quote_provider.dart';
 import 'providers/journal_provider.dart';
 import 'providers/reminder_provider.dart';
+import 'providers/reading_list_provider.dart';
 import 'services/notification_service.dart';
 import 'screens/splash_screen.dart';
 
@@ -105,6 +106,9 @@ void main() async {
   final reminderProvider = ReminderProvider(hiveService);
   await reminderProvider.load();
 
+  final readingListProvider = ReadingListProvider(hiveService);
+  await readingListProvider.load();
+
   final notificationService = NotificationService();
   await notificationService.init();
   if (settingsProvider.briefingEnabled) {
@@ -141,6 +145,7 @@ void main() async {
         ChangeNotifierProvider.value(value: quoteProvider),
         ChangeNotifierProvider.value(value: journalProvider),
         ChangeNotifierProvider.value(value: reminderProvider),
+        ChangeNotifierProvider.value(value: readingListProvider),
       ],
       child: const NexusApp(),
     ),
