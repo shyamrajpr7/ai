@@ -38,6 +38,7 @@ class ChatBubble extends StatelessWidget {
     final settings = context.watch<SettingsProvider>();
     final accent = settings.accentColor;
     final showTimestamps = settings.showTimestamps;
+    final chatFontSize = settings.chatFontSize;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -505,9 +506,9 @@ class ChatBubble extends StatelessWidget {
       }
       return GlowText(
         message.content,
-        style: const TextStyle(
+        style: TextStyle(
           color: Colors.white,
-          fontSize: 15,
+          fontSize: chatFontSize,
           height: 1.6,
         ),
       );
@@ -549,7 +550,7 @@ class ChatBubble extends StatelessWidget {
               styleSheet: MarkdownStyleSheet(
                 p: TextStyle(
                   color: Colors.white.withOpacity(0.95),
-                  fontSize: 15,
+                  fontSize: chatFontSize,
                   height: 1.6,
                 ),
                 code: const TextStyle(
@@ -596,9 +597,9 @@ class ChatBubble extends StatelessWidget {
             data: message.content,
             selectable: true,
             styleSheet: MarkdownStyleSheet(
-              p: const TextStyle(
-                color: Color(0xFFE0E0FF),
-                fontSize: 15,
+              p: TextStyle(
+                color: const Color(0xFFE0E0FF),
+                fontSize: chatFontSize,
                 height: 1.6,
               ),
               h1: const TextStyle(

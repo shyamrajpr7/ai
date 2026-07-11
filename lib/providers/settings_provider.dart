@@ -29,6 +29,7 @@ class SettingsProvider extends ChangeNotifier {
   int _briefingHour = 8;
   int _briefingMinute = 0;
   bool _showTimestamps = true;
+  double _chatFontSize = 15.0;
 
   Color get accentColor => _moodAccentColor ?? _accentColor;
   BackendType get backend => _backend;
@@ -47,6 +48,7 @@ class SettingsProvider extends ChangeNotifier {
   int get briefingHour => _briefingHour;
   int get briefingMinute => _briefingMinute;
   bool get showTimestamps => _showTimestamps;
+  double get chatFontSize => _chatFontSize;
 
   Persona get activePersona {
     final idx = _personas.indexWhere((p) => p.id == _activePersonaId);
@@ -77,6 +79,7 @@ class SettingsProvider extends ChangeNotifier {
       _briefingHour = data['briefingHour'] as int? ?? 8;
       _briefingMinute = data['briefingMinute'] as int? ?? 0;
       _showTimestamps = data['showTimestamps'] as bool? ?? true;
+      _chatFontSize = (data['chatFontSize'] as num?)?.toDouble() ?? 15.0;
       final personasRaw = data['personas'] as List<dynamic>?;
       if (personasRaw != null) {
         _personas = personasRaw
@@ -187,6 +190,12 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setChatFontSize(double size) async {
+    _chatFontSize = size;
+    await _save();
+    notifyListeners();
+  }
+
   Future<void> setActivePersona(String id) async {
     _activePersonaId = id;
     await _save();
@@ -235,6 +244,7 @@ class SettingsProvider extends ChangeNotifier {
       'briefingHour': _briefingHour,
       'briefingMinute': _briefingMinute,
       'showTimestamps': _showTimestamps,
+      'chatFontSize': _chatFontSize,
       'personas': _personas.map((p) => p.toJson()).toList(),
     });
   }

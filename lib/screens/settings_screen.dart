@@ -202,6 +202,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 20),
+                _buildLabel('Chat Font Size'),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Icon(Icons.text_decrease, size: 14, color: Colors.white.withOpacity(0.2)),
+                    Expanded(
+                      child: SliderTheme(
+                        data: SliderThemeData(
+                          trackHeight: 3,
+                          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+                          activeTrackColor: accent,
+                          inactiveTrackColor: Colors.white.withOpacity(0.08),
+                          thumbColor: accent,
+                          overlayColor: accent.withOpacity(0.1),
+                        ),
+                        child: Slider(
+                          value: settings.chatFontSize,
+                          min: 12.0,
+                          max: 20.0,
+                          divisions: 8,
+                          onChanged: (v) => settings.setChatFontSize(v),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 36,
+                      child: Text(
+                        settings.chatFontSize.toStringAsFixed(0),
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.5),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: 'Inter',
+                        ),
+                        textAlign: TextAlign.right,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(Icons.text_increase, size: 14, color: Colors.white.withOpacity(0.3)),
+                  ],
+                ),
               ],
             ),
             const SizedBox(height: 14),
