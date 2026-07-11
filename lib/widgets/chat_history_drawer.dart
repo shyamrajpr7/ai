@@ -634,16 +634,23 @@ class _ConversationTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             trailing: Container(
-              width: 24,
-              height: 24,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: isSelected
+                    ? accent.withOpacity(0.2)
+                    : Colors.white.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(10),
               ),
-              child: Icon(
-                Icons.chevron_right,
-                size: 16,
-                color: Colors.white.withOpacity(0.2),
+              child: Text(
+                '${conversation.messages.length}',
+                style: TextStyle(
+                  color: isSelected
+                      ? accent
+                      : Colors.white.withOpacity(0.4),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  fontFamily: 'SpaceGrotesk',
+                ),
               ),
             ),
           ),
