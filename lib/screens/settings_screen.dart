@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../providers/settings_provider.dart';
 import '../providers/chat_provider.dart';
 import '../services/notification_service.dart';
@@ -11,8 +12,30 @@ import '../widgets/gradient_mesh_background.dart';
 
 const _uuid = Uuid();
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
+
+  @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  String _appVersion = '1.0.0';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _appVersion = '${info.version}+${info.buildNumber}';
+      });
+    }
+  }
 
   static const _accentColors = [
     Color(0xFF7C4DFF),
@@ -408,7 +431,7 @@ class SettingsScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 2),
                   Text(
-                    'Version 1.0',
+                    'Version $_appVersion',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.12),
                       fontSize: 11,
