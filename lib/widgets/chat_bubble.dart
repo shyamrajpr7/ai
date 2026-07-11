@@ -59,6 +59,29 @@ class ChatBubble extends StatelessWidget {
               children: [
                 GestureDetector(
                   onLongPress: () => _showContextMenu(context, isUser, accent),
+                  onTap: () {
+                    Clipboard.setData(ClipboardData(text: message.content));
+                    HapticFeedback.lightImpact();
+                    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Message copied',
+                          style: TextStyle(fontSize: 13),
+                        ),
+                        duration: const Duration(seconds: 1),
+                        backgroundColor: const Color(0xFF1A1A2E),
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 60,
+                          vertical: 20,
+                        ),
+                      ),
+                    );
+                  },
                   child: Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
