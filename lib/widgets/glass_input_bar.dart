@@ -45,6 +45,8 @@ class _GlassInputBarState extends State<GlassInputBar>
   final ImagePicker _picker = ImagePicker();
   bool _isListening = false;
   bool _speechAvailable = false;
+  int _charCount = 0;
+  int _wordCount = 0;
   late AnimationController _pulseController;
   late AnimationController _sendPulseController;
 
@@ -60,6 +62,18 @@ class _GlassInputBarState extends State<GlassInputBar>
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
+    widget.controller.addListener(_updateCounts);
+    _updateCounts();
+  }
+
+  void _updateCounts() {
+    final text = widget.controller.text;
+    setState(() {
+      _charCount = text.length;
+      _wordCount = text.trim().isEmpty
+          ? 0
+          : text.trim().split(RegExp(r'\s+')).length;
+    });
   }
 
   Future<void> _initSpeech() async {
@@ -120,6 +134,7 @@ class _GlassInputBarState extends State<GlassInputBar>
 
   @override
   void dispose() {
+    widget.controller.removeListener(_updateCounts);
     _speech.stop();
     _pulseController.dispose();
     _sendPulseController.dispose();
@@ -191,44 +206,66 @@ class _GlassInputBarState extends State<GlassInputBar>
                     ? accent.withOpacity(0.04)
                     : Colors.white.withOpacity(0.04),
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildMicButton(accent),
-                    Expanded(
-                      child: TextField(
-                        controller: widget.controller,
-                        maxLines: 4,
-                        minLines: 1,
-                        textCapitalization: TextCapitalization.sentences,
-                        style: TextStyle(
-                          color: _isActive
-                              ? accent.withOpacity(0.9)
-                              : Colors.white,
-                          fontSize: 15,
-                          fontFamily: 'Inter',
-                          height: 1.4,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: widget.isProcessing
-                              ? 'Generating...'
-                              : _hintText(webSearchEnabled),
-                          hintStyle: TextStyle(
-                            color: (_isActive ? accent : Colors.white).withOpacity(0.3),
-                            fontSize: 15,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        _buildMicButton(accent),
+                        Expanded(
+                          child: TextField(
+                            controller: widget.controller,
+                            maxLines: 4,
+                            minLines: 1,
+                            textCapitalization: TextCapitalization.sentences,
+                            style: TextStyle(
+                              color: _isActive
+                                  ? accent.withOpacity(0.9)
+                                  : Colors.white,
+                              fontSize: 15,
+                              fontFamily: 'Inter',
+                              height: 1.4,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: widget.isProcessing
+                                  ? 'Generating...'
+                                  : _hintText(webSearchEnabled),
+                              hintStyle: TextStyle(
+                                color: (_isActive ? accent : Colors.white).withOpacity(0.3),
+                                fontSize: 15,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 10),
+                            ),
+                            onSubmitted: (_) => _onSubmit(),
                           ),
-                          border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 10),
                         ),
-                        onSubmitted: (_) => _onSubmit(),
-                      ),
+                        _buildGenButton(accent),
+                        _buildVideoGenButton(accent),
+                        _buildImageButton(accent),
+                        const SizedBox(width: 4),
+                        _buildSendButton(accent),
+                      ],
                     ),
-                    _buildGenButton(accent),
-                    _buildVideoGenButton(accent),
-                    _buildImageButton(accent),
-                    const SizedBox(width: 4),
-                    _buildSendButton(accent),
+                    if (_charCount > 0)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8, bottom: 2),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              '$_wordCount words  $_charCount chars',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.15),
+                                fontSize: 10,
+                                fontFamily: 'Inter',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                   ],
                 ),
               ),
