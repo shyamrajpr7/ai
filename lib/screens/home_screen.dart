@@ -171,6 +171,38 @@ class _HomeScreenState extends State<HomeScreen> {
     _searchFocusNode.requestFocus();
   }
 
+  void _copyAllMessages(ChatProvider provider) {
+    final conv = provider.currentConversation;
+    if (conv == null || conv.messages.isEmpty) return;
+    final buffer = StringBuffer();
+    for (final msg in conv.messages) {
+      final role = msg.role == 'user' ? 'You' : 'Nexus';
+      buffer.writeln('[$role]:');
+      buffer.writeln(msg.content);
+      buffer.writeln();
+    }
+    Clipboard.setData(ClipboardData(text: buffer.toString()));
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '${conv.messages.length} messages copied',
+          style: const TextStyle(fontSize: 13),
+        ),
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFF1A1A2E),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.symmetric(
+          horizontal: 60,
+          vertical: 20,
+        ),
+      ),
+    );
+  }
+
   void _closeSearch() {
     setState(() {
       _isSearching = false;
@@ -896,6 +928,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const Spacer(),
+                      _NavIconButton(
+                        icon: Icons.copy_rounded,
+                        tooltip: 'Copy All Messages',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          _copyAllMessages(provider);
+                        },
+                      ),
                       _NavIconButton(
                         icon: Icons.search_rounded,
                         tooltip: 'Search messages',
