@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../providers/chat_provider.dart';
@@ -58,12 +59,23 @@ class _HomeScreenState extends State<HomeScreen> {
   List<ConversationSearchGroup> _searchResults = [];
   final _searchScrollController = ScrollController();
   Stream<List<ConnectivityResult>>? _connectivityStream;
+  bool _showScrollToBottom = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     _initConnectivity();
+    _scrollController.addListener(_onScroll);
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final atBottom = _scrollController.offset >=
+        _scrollController.position.maxScrollExtent - 100;
+    if (_showScrollToBottom == atBottom) {
+      setState(() => _showScrollToBottom = !atBottom);
+    }
   }
 
   Future<void> _initConnectivity() async {
@@ -626,28 +638,72 @@ class _HomeScreenState extends State<HomeScreen> {
           body: Builder(
             builder: (scaffoldCtx) => GradientMeshBackground(
               child: SafeArea(
-                child: Column(
+                child: Stack(
                   children: [
-                    _buildHeader(scaffoldCtx, accent, provider),
-                    Expanded(
-                      child: _isSearching
-                          ? _buildSearchResults(accent, provider)
-                          : _buildMessages(provider, accent),
+                    Column(
+                      children: [
+                        _buildHeader(scaffoldCtx, accent, provider),
+                        Expanded(
+                          child: _isSearching
+                              ? _buildSearchResults(accent, provider)
+                              : _buildMessages(provider, accent),
+                        ),
+                        if (_pendingImageBase64 != null)
+                          _buildImagePreview(accent),
+                        GlassInputBar(
+                          isProcessing: provider.isProcessing,
+                          isImageGen: _isImageGen,
+                          isVideoGen: _isVideoGen,
+                          onImagePicked: _handleImagePicked,
+                          onSend: _handleSend,
+                          onGenerateImage: _handleGenerateImage,
+                          onGenerateVideo: _handleGenerateVideo,
+                          onToggleImageGen: _handleToggleImageGen,
+                          onToggleVideoGen: _handleToggleVideoGen,
+                          controller: _textController,
+                        ),
+                      ],
                     ),
-                    if (_pendingImageBase64 != null)
-                      _buildImagePreview(accent),
-                    GlassInputBar(
-                      isProcessing: provider.isProcessing,
-                      isImageGen: _isImageGen,
-                      isVideoGen: _isVideoGen,
-                      onImagePicked: _handleImagePicked,
-                      onSend: _handleSend,
-                      onGenerateImage: _handleGenerateImage,
-                      onGenerateVideo: _handleGenerateVideo,
-                      onToggleImageGen: _handleToggleImageGen,
-                      onToggleVideoGen: _handleToggleVideoGen,
-                      controller: _textController,
-                    ),
+                    if (_showScrollToBottom)
+                      Positioned(
+                        right: 16,
+                        bottom: 90,
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            _scrollToBottom();
+                            setState(() => _showScrollToBottom = false);
+                          },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: accent.withOpacity(0.85),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: accent.withOpacity(0.4),
+                                  blurRadius: 12,
+                                  spreadRadius: 0,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                        ).animate().fadeIn(
+                          duration: 200.ms,
+                          curve: Curves.easeOutCubic,
+                        ).slideY(
+                          begin: 0.2,
+                          end: 0,
+                          duration: 200.ms,
+                          curve: Curves.easeOutCubic,
+                        ),
+                      ),
                   ],
                 ),
               ),
