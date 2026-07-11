@@ -35,7 +35,9 @@ class ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isUser = message.role == 'user';
-    final accent = context.watch<SettingsProvider>().accentColor;
+    final settings = context.watch<SettingsProvider>();
+    final accent = settings.accentColor;
+    final showTimestamps = settings.showTimestamps;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -132,7 +134,7 @@ class ChatBubble extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 3),
-                if (!isStreaming && !isError)
+                if (!isStreaming && !isError && showTimestamps)
                   Padding(
                     padding: EdgeInsets.only(
                       left: isUser ? 0 : 4,

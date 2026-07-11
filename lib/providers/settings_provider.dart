@@ -28,6 +28,7 @@ class SettingsProvider extends ChangeNotifier {
   bool _briefingEnabled = true;
   int _briefingHour = 8;
   int _briefingMinute = 0;
+  bool _showTimestamps = true;
 
   Color get accentColor => _moodAccentColor ?? _accentColor;
   BackendType get backend => _backend;
@@ -45,6 +46,7 @@ class SettingsProvider extends ChangeNotifier {
   bool get briefingEnabled => _briefingEnabled;
   int get briefingHour => _briefingHour;
   int get briefingMinute => _briefingMinute;
+  bool get showTimestamps => _showTimestamps;
 
   Persona get activePersona {
     final idx = _personas.indexWhere((p) => p.id == _activePersonaId);
@@ -74,6 +76,7 @@ class SettingsProvider extends ChangeNotifier {
       _briefingEnabled = data['briefingEnabled'] as bool? ?? true;
       _briefingHour = data['briefingHour'] as int? ?? 8;
       _briefingMinute = data['briefingMinute'] as int? ?? 0;
+      _showTimestamps = data['showTimestamps'] as bool? ?? true;
       final personasRaw = data['personas'] as List<dynamic>?;
       if (personasRaw != null) {
         _personas = personasRaw
@@ -178,6 +181,12 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> setShowTimestamps(bool show) async {
+    _showTimestamps = show;
+    await _save();
+    notifyListeners();
+  }
+
   Future<void> setActivePersona(String id) async {
     _activePersonaId = id;
     await _save();
@@ -225,6 +234,7 @@ class SettingsProvider extends ChangeNotifier {
       'briefingEnabled': _briefingEnabled,
       'briefingHour': _briefingHour,
       'briefingMinute': _briefingMinute,
+      'showTimestamps': _showTimestamps,
       'personas': _personas.map((p) => p.toJson()).toList(),
     });
   }

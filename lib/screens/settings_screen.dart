@@ -155,6 +155,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     );
                   }).toList(),
                 ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Show timestamps',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.85),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            'Display time under each message',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.35),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 48,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        color: settings.showTimestamps
+                            ? accent.withOpacity(0.25)
+                            : Colors.white.withOpacity(0.08),
+                      ),
+                      child: Switch(
+                        value: settings.showTimestamps,
+                        onChanged: (v) => settings.setShowTimestamps(v),
+                        activeColor: accent,
+                        activeTrackColor: accent.withOpacity(0.3),
+                        inactiveThumbColor: Colors.white.withOpacity(0.3),
+                        inactiveTrackColor: Colors.white.withOpacity(0.08),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
             const SizedBox(height: 14),
