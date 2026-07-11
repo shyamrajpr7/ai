@@ -134,6 +134,21 @@ class ChatProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> clearCurrentConversation() async {
+    if (_currentConversationId == null) return;
+    final idx = _conversations.indexWhere((c) => c.id == _currentConversationId);
+    if (idx == -1) return;
+    _conversations[idx].messages.clear();
+    _conversations[idx].branches = [
+      _conversations[idx].branches.first,
+    ];
+    _conversations[idx].activeBranchId = _conversations[idx].branches.first.id;
+    _currentResponse = '';
+    _errorMessage = null;
+    await _save();
+    notifyListeners();
+  }
+
   Future<void> renameConversation(String id, String title) async {
     final idx = _conversations.indexWhere((c) => c.id == id);
     if (idx != -1) {

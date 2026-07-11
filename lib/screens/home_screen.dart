@@ -488,6 +488,96 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _showClearChatDialog(BuildContext context, ChatProvider provider) {
+    final conv = provider.currentConversation;
+    if (conv == null) return;
+    final title = conv.title;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF12121A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.orange.withOpacity(0.15),
+              ),
+              child: const Icon(Icons.delete_sweep_outlined, size: 18, color: Colors.orange),
+            ),
+            const SizedBox(width: 12),
+            const Text(
+              'Clear Chat',
+              style: TextStyle(
+                color: Colors.white,
+                fontFamily: 'SpaceGrotesk',
+                fontWeight: FontWeight.w600,
+                fontSize: 17,
+              ),
+            ),
+          ],
+        ),
+        content: Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(
+            'Clear all messages in "$title"? This cannot be undone.',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 14,
+              height: 1.5,
+            ),
+          ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+        actions: [
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.white.withOpacity(0.05),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.white.withOpacity(0.6)),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton(
+              onPressed: () {
+                provider.clearCurrentConversation();
+                Navigator.pop(ctx);
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.orange.withOpacity(0.15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text(
+                'Clear All',
+                style: TextStyle(color: Colors.orange),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showPromptVault(BuildContext buildContext) {
     HapticFeedback.lightImpact();
     Navigator.push(
@@ -721,6 +811,14 @@ class _HomeScreenState extends State<HomeScreen> {
                         onPressed: () {
                           HapticFeedback.lightImpact();
                           provider.createConversation();
+                        },
+                      ),
+                      _NavIconButton(
+                        icon: Icons.delete_sweep_outlined,
+                        tooltip: 'Clear Chat',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          _showClearChatDialog(context, provider);
                         },
                       ),
                       _NavIconButton(
