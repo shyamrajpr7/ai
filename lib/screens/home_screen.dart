@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../providers/chat_provider.dart';
 import '../providers/settings_provider.dart';
 import '../models/persona.dart';
@@ -51,15 +52,35 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isImageGen = false;
   bool _isVideoGen = false;
   bool _isSearching = false;
+  bool _isOnline = true;
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
   List<ConversationSearchGroup> _searchResults = [];
   final _searchScrollController = ScrollController();
+  Stream<List<ConnectivityResult>>? _connectivityStream;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    _initConnectivity();
+  }
+
+  Future<void> _initConnectivity() async {
+    final result = await Connectivity().checkConnectivity();
+    if (mounted) {
+      setState(() {
+        _isOnline = result != ConnectivityResult.none;
+      });
+    }
+    _connectivityStream = Connectivity().onConnectivityChanged;
+    _connectivityStream!.listen((results) {
+      if (mounted) {
+        setState(() {
+          _isOnline = results.any((r) => r != ConnectivityResult.none);
+        });
+      }
+    });
   }
 
   @override
@@ -799,6 +820,25 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       _buildModelBadge(accent),
+                      const SizedBox(width: 6),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: _isOnline
+                              ? const Color(0xFF00E676)
+                              : Colors.white.withOpacity(0.2),
+                          boxShadow: _isOnline
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFF00E676).withOpacity(0.4),
+                                    blurRadius: 6,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                      ),
                       const Spacer(),
                       _NavIconButton(
                         icon: Icons.search_rounded,
