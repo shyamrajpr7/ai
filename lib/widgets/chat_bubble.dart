@@ -31,6 +31,8 @@ class ChatBubble extends StatelessWidget {
     this.onEdit,
     this.onDelete,
   });
+  
+  double? get chatFontSize => null;
 
   @override
   Widget build(BuildContext context) {
@@ -429,6 +431,7 @@ class ChatBubble extends StatelessWidget {
   }
 
   Widget _buildContent(BuildContext context, bool isUser, Color accent) {
+    final chatFontSize = context.read<SettingsProvider>().chatFontSize;
     if (isError) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
